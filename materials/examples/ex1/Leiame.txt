@@ -1,0 +1,87 @@
+
+Essa pasta contém os seguintes arquivos:
+1) Leiame.txt - Esse arquivo que explica como gerar o código executável da integração dos analisadores sintático e léxico para a linguagem simpleLang.y.
+2) sintático.y - o arquivo de entrada para o Bison, contendo principalmente a especificação da gramática para linguagem
+na forma aceita pelo Bison.
+3) lexico.l - arquivo de entrada para  Flex. Esse arquivo contém: definições regulares (nomes dados a expressões) regulares, expressões regulares e ações que o analisador léxico deve executar quando uma sequência de caracteres na entrada for reconhecida por uma expressão regular.
+4)Makefile - arquivo contendo comandos da shell para converter os arquivos lexico.l e sintático.y em programas em C, comandos para compilar esses  módulos em C e para ligá-los, gerando  o executável simpleLang.
+5) Dois arquivos de teste escritos em simpleLang. Um está sintaticamente correto. O outro possui erro.
+
+PASSOS PARA GERA UM PROGRAMA EXECUTÁVEL PARA ANALISAR SINTATICAMENTE PROGRAMAS 
+ESCRITOS EM SimpleLang. 
+
+1) A gramática para SimpleLang está descrita no arquivo Bison.pdf que está no Bloco 1 da Turing. Criamos um arquivo de entrada denominado sintatico.y que transcreve a gramática no dialeto compreendido pelo Bison. Esse arquivo de entrada corresponde ao arquivo simpleLang.y que está nesse diretório.  Veja que no arquivo simpleLang.y temos dois tipos de tokens. Alguns aparecem entre “ e “ do lado direito das produções  e outros são especificados pela diretiva %token: IF WHILE DO LEQ  NUM. 
+
+2)Chamamos o Bison para gerar código em C para o arquivo simpleLang.y e pedimos a ele também para gerar um header file que já atribua a cada token definido pela diretiva %token em  um valor inteiro positivo.
+Isso pode ser feito com o seguinte comando no Linux:  bison -HsimpleLang.h -osintatico.c sintatico.y
+a opção -HsimpleLang.h (ou - - header=simpleLang.h) gera o arquivo simpleLang.h. Esse arquivo conterá uma série de declarações criadas pelo Bison que devem ser utilizadas tanto pelo código do analisador sintático (sintatico.c) quanto pelo código do analisador léxico (lexico.c -  a ser explicado a baixo.). No arquivo simpleLang.h você verá a declaração
+/* Token kinds.  */
+#ifndef YYTOKENTYPE
+# define YYTOKENTYPE
+  enum yytokentype
+  {
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    IF = 258,                      /* IF  */
+    WHILE = 259,                   /* WHILE  */
+    DO = 260,                      /* DO  */
+    LEQ = 261,                     /* LEQ  */
+    NUM = 262                      /* NUM  */
+  };
+  typedef enum yytokentype yytoken_kind_t;
+#endif
+que contém uma enumeração em C de alguns tokens juntamente com os seus valores inteiros positivos. O analisador 
+léxico (int yylex()) criado pelo Flex deve retornar como tokens os valores inteiros da tabela ASCII correspondentes aos tokens que aparecem explicitamente entre “ e “ na especificação da gramática (sintatico.y) ou os tokens que aparecem nessa enumeração. Ou seja V_T da gramática corresponde a união desses dois conjuntos de tokens.
+
+3) Incluimos tanto em sintatico.y quanto em lexico.l um include para simpleLang.h:
+
+sintatico.y (veja a seta no trecho  abaixo):
+
+%{
+/*********** Este arquivo Define a implementação do esquema de traducaoo da figura 2.39, 
+************ secao 2.8.2 doDragon book. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include "simpleLang.h" <——————
+extern char * yytext;
+extern int yylex();
+extern int numLinha;
+extern FILE* yyin;
+extern int erroOrigem;
+void yyerror( char const *s);
+%}
+
+lexico.l:
+%{
+// Secao do Flex de definicao de vriaveis da linguagem C, e inclusao  de arquivos de cabecalho
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include "simpleLang.h"     <—————
+char msg[500];
+extern void yyerror( char const   *s); 
+int numLinha=1;
+int erroOrigem=1;
+%}
+
+
+4) Chamamos o Flex para gerar o código em C correspondente ao analisador léxico:
+ flex -olexico.c  lexico.l
+
+5) Compilamos os dois arquivos em linguagem C: 
+ gcc -c sintatico.c -o sintatico.o
+ gcc -c lexico.c -o lexico.o
+
+6) Ligamos os dois códigos objetos gerados para formar o executável simpleLang:
+gcc sintatico.o lexico.o -o simpleLang 
+
+7) Podemos executar o analisador sintático integrado ao léxico: 
+./simpleLang teste1
+./simpleLang teste2
+
+O Makefile que está na pasta automatiza essa integração. Basta digitar o seguinte comando:
+ make
+
