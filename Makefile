@@ -20,18 +20,27 @@ SINTATICO_O = $(BUILD)/sintatico.o
 LEXICO_C = $(BUILD)/lexico.c
 LEXICO_O = $(BUILD)/lexico.o
 
+# ---- arvore sintatica abstrata (escrita a mao, nao e' gerada) ----
+AST_O = $(BUILD)/ast.o
+
 # Alvo principal: liga os dois objetos e produz o executavel.
 # O executavel fica na RAIZ porque o enunciado pede:  ./g-v1 teste.g
-g-v1: $(SINTATICO_O) $(LEXICO_O)
-	$(CC) $(SINTATICO_O) $(LEXICO_O) -o g-v1
+g-v1: $(SINTATICO_O) $(LEXICO_O) $(AST_O)
+	$(CC) $(SINTATICO_O) $(LEXICO_O) $(AST_O) -o g-v1
+
+# ------------------------------- arvore ---------------------------------
+$(AST_O): ast.c ast.h
+	mkdir -p $(BUILD)
+	$(CC) -c ast.c -o $(AST_O)
 
 # ------------------------- analisador sintatico -------------------------
 $(SINTATICO_C): g-v1.y
 	mkdir -p $(BUILD)
 	$(BISON) --header=$(SINTATICO_H) -o $(SINTATICO_C) g-v1.y
 
-$(SINTATICO_O): $(SINTATICO_C)
-	$(CC) -I$(BUILD) -c $(SINTATICO_C) -o $(SINTATICO_O)
+# "-I." para achar ast.h na raiz, ja' que sintatico.c mora em build/.
+$(SINTATICO_O): $(SINTATICO_C) ast.h
+	$(CC) -I$(BUILD) -I. -c $(SINTATICO_C) -o $(SINTATICO_O)
 
 # -------------------------- analisador lexico ---------------------------
 # Depende de $(SINTATICO_C) porque e' naquele passo que o header nasce,

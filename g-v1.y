@@ -1,10 +1,11 @@
 %{
-/* g-v1.y - analisador sintatico da linguagem G-V1 (Fase 1)
-   Gramatica da Secao 2 do enunciado. Detalhes: EXPLICACAO-fase1.md */
+/* g-v1.y - analisador sintático da linguagem G-V1
+   Gramática da Seção 2 do enunciado. */
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>   /* stat(): para recusar diretório antes de entregar ao Flex */
 
-/* definidos no codigo gerado pelo Flex, compilado a parte */
+/* definidos no código gerado pelo Flex, compilado à parte */
 extern int   yylineno;
 extern char* yytext;
 extern int   yylex();
@@ -13,7 +14,6 @@ extern FILE* yyin;
 void yyerror(char const* s);
 %}
 
-/* Tokens de um caractere ('{', ';', ...) nao entram aqui: sao o proprio ASCII. */
 %token PRINCIPAL INT CAR LEIA ESCREVA NOVALINHA SE ENTAO SENAO FIMSE ENQUANTO
 %token OU E IGUAL DIFERENTE MAIORIGUAL MENORIGUAL
 %token IDENTIFICADOR INTCONST CARCONST CADEIACARACTERES
@@ -26,24 +26,24 @@ void yyerror(char const* s);
 Programa      : DeclPrograma
               ;
 
-DeclPrograma  : PRINCIPAL Bloco                    /* todo programa comeca com "principal" */
+DeclPrograma  : PRINCIPAL Bloco
               ;
 
-Bloco         : '{' ListaComando '}'               /* bloco sem declaracoes */
-              | VarSection '{' ListaComando '}'    /* bloco com declaracoes: dois pares de chaves */
+Bloco         : '{' ListaComando '}'
+              | VarSection '{' ListaComando '}'    /* com declarações: dois pares de chaves */
               ;
 
-VarSection    : '{' ListaDeclVar '}'               /* a secao de variaveis tem chaves proprias */
+VarSection    : '{' ListaDeclVar '}'
               ;
 
-/* ---------- declaracoes ---------- */
+/* ---------- declarações ---------- */
 
-ListaDeclVar  : IDENTIFICADOR DeclVar ':' Tipo ';' ListaDeclVar   /* ha mais declaracoes */
-              | IDENTIFICADOR DeclVar ':' Tipo ';'                /* esta e a ultima */
+ListaDeclVar  : IDENTIFICADOR DeclVar ':' Tipo ';' ListaDeclVar
+              | IDENTIFICADOR DeclVar ':' Tipo ';'
               ;
 
-DeclVar       : /* vazio - um nome so:  x : int; */
-              | ',' IDENTIFICADOR DeclVar          /* varios nomes:  x, y, z : int; */
+DeclVar       : /* vazio */                        /* um nome só:  x : int; */
+              | ',' IDENTIFICADOR DeclVar          /* vários nomes:  x, y, z : int; */
               ;
 
 Tipo          : INT
@@ -52,82 +52,90 @@ Tipo          : INT
 
 /* ---------- comandos ---------- */
 
-ListaComando  : Comando                            /* o ultimo comando da lista */
-              | Comando ListaComando               /* um comando seguido do resto */
+ListaComando  : Comando
+              | Comando ListaComando
               ;
 
 Comando       : ';'                                                 /* comando vazio */
-              | Expr ';'                                            /* atribuicao ou expressao */
-              | LEIA IDENTIFICADOR ';'                              /* le um valor */
-              | ESCREVA Expr ';'                                    /* imprime um valor */
-              | ESCREVA CADEIACARACTERES ';'                        /* imprime um texto fixo */
-              | NOVALINHA ';'                                       /* pula linha */
-              | SE '(' Expr ')' ENTAO Comando FIMSE                 /* se sem senao */
-              | SE '(' Expr ')' ENTAO Comando SENAO Comando FIMSE   /* se com senao */
-              | ENQUANTO '(' Expr ')' Comando                       /* laco */
+              | Expr ';'
+              | LEIA IDENTIFICADOR ';'
+              | ESCREVA Expr ';'
+              | ESCREVA CADEIACARACTERES ';'
+              | NOVALINHA ';'
+              | SE '(' Expr ')' ENTAO Comando FIMSE                 /* o FIMSE fecha o se: */
+              | SE '(' Expr ')' ENTAO Comando SENAO Comando FIMSE   /* não há senão pendente */
+              | ENQUANTO '(' Expr ')' Comando
               | Bloco                                               /* bloco aninhado */
               ;
 
-/* ---------- expressoes ----------
-   A precedencia esta na cascata Expr -> ... -> PrimExpr: quanto mais
-   fundo, mais forte o operador. Por isso nao ha %left nem %right. */
+/* ---------- expressões ----------
+   A precedência está na cascata Expr -> OrExpr -> ... -> PrimExpr: quanto mais
+   fundo, mais forte o operador. Por isso não há %left nem %right. */
 
 Expr          : OrExpr
-              | IDENTIFICADOR '=' Expr             /* atribuicao: so um nome a esquerda */
+              | IDENTIFICADOR '=' Expr             /* atribuição: só um nome à esquerda */
               ;
 
-OrExpr        : OrExpr OU AndExpr                  /* ||  - o operador mais fraco */
+OrExpr        : OrExpr OU AndExpr
               | AndExpr
               ;
 
-AndExpr       : AndExpr E EqExpr                   /* &   */
+AndExpr       : AndExpr E EqExpr
               | EqExpr
               ;
 
-EqExpr        : EqExpr IGUAL DesigExpr             /* ==  */
-              | EqExpr DIFERENTE DesigExpr         /* !=  */
+EqExpr        : EqExpr IGUAL DesigExpr
+              | EqExpr DIFERENTE DesigExpr
               | DesigExpr
               ;
 
-DesigExpr     : DesigExpr '<' AddExpr              /* <   */
-              | DesigExpr '>' AddExpr              /* >   */
-              | DesigExpr MAIORIGUAL AddExpr       /* >=  */
-              | DesigExpr MENORIGUAL AddExpr       /* <=  */
+DesigExpr     : DesigExpr '<' AddExpr
+              | DesigExpr '>' AddExpr
+              | DesigExpr MAIORIGUAL AddExpr
+              | DesigExpr MENORIGUAL AddExpr
               | AddExpr
               ;
 
-AddExpr       : AddExpr '+' MulExpr                /* +   */
-              | AddExpr '-' MulExpr                /* -   */
+AddExpr       : AddExpr '+' MulExpr
+              | AddExpr '-' MulExpr
               | MulExpr
               ;
 
-MulExpr       : MulExpr '*' UnExpr                 /* *   - mais forte que + e - */
-              | MulExpr '/' UnExpr                 /* /   */
+MulExpr       : MulExpr '*' UnExpr
+              | MulExpr '/' UnExpr
               | UnExpr
               ;
 
-UnExpr        : '-' PrimExpr                       /* menos unario:  -5 */
-              | '!' PrimExpr                       /* negacao:  !x */
+UnExpr        : '-' PrimExpr                       /* menos unário:  -5 */
+              | '!' PrimExpr
               | PrimExpr
               ;
 
-PrimExpr      : IDENTIFICADOR                      /* nome de variavel */
-              | CARCONST                           /* 'a' */
-              | INTCONST                           /* 42 */
-              | '(' Expr ')'                       /* parenteses mudam a ordem */
+PrimExpr      : IDENTIFICADOR
+              | CARCONST
+              | INTCONST
+              | '(' Expr ')'
               ;
 
 %%
 
 int main(int argc, char** argv) {
+    struct stat info;
+
     if (argc != 2) {
         printf("Uso correto: ./g-v1 nome_do_arquivo\n");
         return 1;
     }
 
-    yyin = fopen(argv[1], "r");   /* arquivo que o lexico vai ler */
+    /* fopen aceita diretório; quem quebra e' o Flex, com mensagem em inglês. */
+    if (stat(argv[1], &info) == 0 && S_ISDIR(info.st_mode)) {
+        printf("%s é um diretório, não um arquivo\n", argv[1]);
+        return 1;
+    }
+
+    yyin = fopen(argv[1], "r");   /* arquivo que o léxico vai ler */
     if (!yyin) {
-        printf("Nao foi possivel abrir o arquivo %s\n", argv[1]);
+        printf("Não foi possível abrir o arquivo %s\n", argv[1]);
         return 1;
     }
 
@@ -140,7 +148,7 @@ int main(int argc, char** argv) {
 
 /* Chamada pelo Bison quando o parser trava. */
 void yyerror(char const* s) {
-    (void)s;   /* a mensagem do Bison vem em ingles; usamos a nossa */
+    (void)s;   /* a mensagem do Bison vem em inglês; usamos a nossa */
     printf("ERRO: sintatico proximo a \"%s\" - linha %d\n", yytext, yylineno);
     exit(1);
 }

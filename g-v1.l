@@ -1,37 +1,33 @@
 %{
-/* g-v1.l - analisador lexico da linguagem G-V1 (Fase 1)
-   Justificativas das decisoes: EXPLICACAO-fase1.md */
+/* g-v1.l - analisador léxico da linguagem G-V1 */
 #include <stdio.h>
 #include <stdlib.h>
-#include "g-v1.tab.h"   /* numero de cada token, gerado pelo Bison */
+#include "g-v1.tab.h"   /* número de cada token, gerado pelo Bison */
 
 void erroLexico(char* mensagem);
 %}
 
-/* conta linhas sozinho, em yylineno */
-%option yylineno
-
-/* so ha um arquivo de entrada */
-%option noyywrap
+/* yylineno: o Flex conta as linhas sozinho. noyywrap: só há um arquivo. */
+%option yylineno noyywrap
 
 DIGITO   [0-9]
 LETRA    [A-Za-z_]
 
-/* estado para comentarios, que podem ocupar varias linhas */
+/* Estado exclusivo: dentro dele só valem as regras marcadas <COMENTARIO>. */
 %x COMENTARIO
 
 %%
- /* ---------- comentarios ---------- */
-"/*"                      BEGIN(COMENTARIO);   /* entra no estado */
-<COMENTARIO>"*/"          BEGIN(INITIAL);      /* sai do estado */
-<COMENTARIO>\n            ;                    /* descarta (yylineno conta sozinho) */
-<COMENTARIO>.             ;                    /* descarta qualquer outro caractere */
-<COMENTARIO><<EOF>>       { erroLexico("COMENTÁRIO NAO TERMINA"); }  /* acabou o arquivo dentro do comentario */
+ /* ---------- comentários ---------- */
+"/*"                      BEGIN(COMENTARIO);
+<COMENTARIO>"*/"          BEGIN(INITIAL);
+<COMENTARIO>\n            ;                    /* "." não casa \n; sem esta regra ele seria ecoado */
+<COMENTARIO>.             ;
+<COMENTARIO><<EOF>>       { erroLexico("COMENTÁRIO NAO TERMINA"); }
 
- /* ---------- espacos ---------- */
-[ \t\n]+                  ;                    /* reconhece e nao devolve token */
+[ \t\r\n]+                ;    /* reconhece e nao devolve token */
 
- /* ---------- palavras reservadas: antes de IDENTIFICADOR ---------- */
+ /* ---------- palavras reservadas: antes da regra de IDENTIFICADOR ---------- */
+ /* "principal" casa nas duas com o mesmo tamanho; no empate o Flex usa a primeira. */
 "principal"               return PRINCIPAL;
 "int"                     return INT;
 "car"                     return CAR;
@@ -44,29 +40,28 @@ LETRA    [A-Za-z_]
 "fimse"                   return FIMSE;
 "enquanto"                return ENQUANTO;
 
- /* ---------- operadores compostos: antes dos simples ---------- */
-"||"                      return OU;           /* ou logico */
-"&"                       return E;            /* e logico */
+ /* ---------- operadores de dois símbolos: antes dos de um ---------- */
+"||"                      return OU;
+"&"                       return E;
 "=="                      return IGUAL;
 "!="                      return DIFERENTE;
 ">="                      return MAIORIGUAL;
 "<="                      return MENORIGUAL;
 
- /* ---------- caracteres simples ---------- */
-[{}():;,=<>+\-*/!]        return yytext[0];    /* devolve o proprio codigo ASCII */
+[{}():;,=<>+\-*/!]        return yytext[0];    /* o token é o próprio código ASCII */
 
  /* ---------- identificadores e constantes ---------- */
-{LETRA}({LETRA}|{DIGITO})*   return IDENTIFICADOR;      /* letra, depois letras ou digitos */
-{DIGITO}+                    return INTCONST;           /* sem sinal: research.md D12 */
+{LETRA}({LETRA}|{DIGITO})*   return IDENTIFICADOR;
+{DIGITO}+                    return INTCONST;           /* sem sinal */
 '([^'\\\n]|\\.)'             return CARCONST;           /* um caractere, ou um escape */
-\"[^\"\n]*\"                 return CADEIACARACTERES;   /* entre aspas, sem quebra de linha */
+\"[^\"\n]*\"                 return CADEIACARACTERES;
 
- /* ---------- erros lexicos ---------- */
-\"[^\"\n]*                   { erroLexico("CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA"); }  /* aspa que nao fecha */
-.                            { erroLexico("CARACTERE INVÁLIDO"); }  /* pega-tudo: sempre por ultimo */
+ /* ---------- erros léxicos ---------- */
+\"[^\"\n]*                   { erroLexico("CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA"); }
+.                            { erroLexico("CARACTERE INVÁLIDO"); }   /* pega-tudo: sempre por último */
 
 %%
-/* Formato do enunciado: ERRO: <mensagem> <linha> */
+/* Formato exigido pelo enunciado: ERRO: <mensagem> <linha> */
 void erroLexico(char* mensagem) {
     printf("ERRO: %s %d\n", mensagem, yylineno);
     exit(1);
