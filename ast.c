@@ -28,7 +28,7 @@ No* criaNo(Especie especie, int linha, char* lexema, No* f1, No* f2, No* f3) {
     no->especie = especie;
     no->linha   = linha;
     no->lexema  = lexema;
-    no->tipo    = TIPO_NENHUM;   /* ainda sem tipo: o DECL recebe na declara, as expressões na Fase 4 */
+    no->tipo    = TIPO_NENHUM;
     no->filho1  = f1;
     no->filho2  = f2;
     no->filho3  = f3;
