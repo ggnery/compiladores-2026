@@ -58,6 +58,20 @@ No* criaNo(Especie especie, int linha, char* lexema, No* f1, No* f2, No* f3) {
     return no;
 }
 
+/* Uma linha "a, b, c : int;" vira três DECL numa LISTA_DECL. O tipo só é
+   conhecido depois dos nomes, então ele é carimbado aqui, no fim; "resto" é
+   emendado só depois, para não carimbar as declarações das linhas seguintes. */
+No* declara(char* nome, int linha, No* outros, Tipo tipo, No* resto) {
+    No* lista = criaNo(LISTA_DECL, linha, NULL,
+                       criaNo(DECL, linha, nome, NULL, NULL, NULL), outros, NULL);   /* primeiro nome + os outros */
+    No* p;
+
+    for (p = lista; p; p = p->filho2) p->filho1->tipo = tipo;   /* carimba o tipo em cada DECL */
+    for (p = lista; p->filho2; p = p->filho2) ;                 /* anda até o fim da lista */
+    p->filho2 = resto;                                          /* emenda as linhas seguintes */
+    return lista;
+}
+
 /* ---------- impressão da árvore ----------
 
    PROGRAMA  (linha 1)
@@ -70,15 +84,15 @@ No* criaNo(Especie especie, int linha, char* lexema, No* f1, No* f2, No* f3) {
    O último filho usa └── e passa espaços aos netos; os outros usam ├──
    e passam │, que continua a linha vertical. */
 
-static void imprimeNo(No* no, const char* prefixo, const char* galho, const char* recuo) {
+static void imprimeNo(FILE* saida, No* no, const char* prefixo, const char* galho, const char* recuo) {
     No*  filhos[3] = { no->filho1, no->filho2, no->filho3 };
     char proximo[1024];
     int  i, ultimo = -1;
 
-    printf("%s%s%s", prefixo, galho, nomeEspecie(no->especie));
-    if (no->lexema)              printf(" %s", no->lexema);
-    if (no->tipo != TIPO_NENHUM) printf(" : %s", no->tipo == TIPO_INT ? "int" : "car");
-    printf("  (linha %d)\n", no->linha);   /* a linha do fonte guardada no nó */
+    fprintf(saida, "%s%s%s", prefixo, galho, nomeEspecie(no->especie));
+    if (no->lexema)              fprintf(saida, " %s", no->lexema);
+    if (no->tipo != TIPO_NENHUM) fprintf(saida, " : %s", no->tipo == TIPO_INT ? "int" : "car");
+    fprintf(saida, "  (linha %d)\n", no->linha);   /* a linha do fonte guardada no nó */
 
     snprintf(proximo, sizeof proximo, "%s%s", prefixo, recuo);   /* prefixo dos filhos */
 
@@ -87,11 +101,17 @@ static void imprimeNo(No* no, const char* prefixo, const char* galho, const char
 
     for (i = 0; i < 3; i++) {
         if (!filhos[i]) continue;       /* ausência é NULL: pula */
-        if (i == ultimo) imprimeNo(filhos[i], proximo, "└── ", "    ");
-        else             imprimeNo(filhos[i], proximo, "├── ", "│   ");
+        if (i == ultimo) imprimeNo(saida, filhos[i], proximo, "└── ", "    ");
+        else             imprimeNo(saida, filhos[i], proximo, "├── ", "│   ");
     }
 }
 
-void imprimeArvore(No* raiz) {
-    if (raiz) imprimeNo(raiz, "", "", "");   /* a raiz não tem galho */
+void imprimeArvore(No* raiz, const char* nomeArquivo) {
+    FILE* saida = fopen(nomeArquivo, "w");   /* cria o arquivo, ou apaga o anterior */
+    if (!saida) {
+        printf("Não foi possível criar o arquivo %s\n", nomeArquivo);
+        exit(1);
+    }
+    if (raiz) imprimeNo(saida, raiz, "", "", "");   /* a raiz não tem galho */
+    fclose(saida);
 }

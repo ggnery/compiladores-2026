@@ -141,7 +141,7 @@ declarado é sintaticamente perfeito. Reconhecer a forma não é entender o sent
 
 ```bash
 make
-./g-v1 testes/Outros/ok1.g          # Programa sintaticamente correto. (+ a árvore, desde a Fase 2)
+./g-v1 testes/Outros/ok1.g          # Programa sintaticamente correto. (e grava build/arvore.txt, desde a Fase 2)
 ./g-v1 testes/Outros/ok2.g          # idem (cobre leia, todos os operadores, bloco aninhado)
 ./g-v1 testes/Outros/erro_lexico1.g # ERRO: CARACTERE INVÁLIDO 6
 ./g-v1 testes/Outros/erro_lexico2.g # ERRO: COMENTÁRIO NAO TERMINA 4

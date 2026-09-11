@@ -54,7 +54,7 @@ imprimi-la, para ter a representação intermediária que alimenta as fases segu
 
 **Por que P2**: a AST é a espinha dorsal — semântico e geração de código são percursos nela.
 
-**Teste independente**: `./g-v1 testes/ok1.g` imprime a árvore (percurso) e a estrutura
+**Teste independente**: `./g-v1 testes/Outros/ok1.g` grava a árvore (percurso) em `build/arvore.txt` e a estrutura
 impressa corresponde ao programa de entrada.
 
 **Cenários de aceitação**:

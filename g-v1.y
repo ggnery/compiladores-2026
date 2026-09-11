@@ -24,7 +24,6 @@ void yyerror(char const* s);
 /* Sai no .c depois do include do header, então No e Tipo já existem aqui. */
 %code {
     static No* raiz;   /* a árvore pronta; a ação de Programa preenche */
-    static No* declara(char* nome, int linha, No* outros, Tipo tipo, No* resto);
 }
 
 /* O valor que cada símbolo carrega na pilha do parser. */
@@ -67,7 +66,7 @@ VarSection    : '{' ListaDeclVar '}'                               { $$ = $2; } 
               ;
 
 /* ---------- declarações ----------
-   O tipo só aparece depois dos nomes, então declara() volta na lista já
+   O tipo só aparece depois dos nomes, então declara() (ast.c) volta na lista já
    montada e carimba o tipo em cada DECL daquela linha. */
 
 ListaDeclVar  : IDENTIFICADOR DeclVar ':' Tipo ';' ListaDeclVar    { $$ = declara($1, @1.first_line, $2, $4, $6); }     /* esta linha + as seguintes */
@@ -156,6 +155,7 @@ PrimExpr      : IDENTIFICADOR                                      { $$ = criaNo
 
 int main(int argc, char** argv) {
     struct stat info;
+    const char* arquivoArvore = "build/arvore.txt";   /* onde a árvore é gravada */
 
     if (argc != 2) {
         printf("Uso correto: ./g-v1 nome_do_arquivo\n");
@@ -178,22 +178,10 @@ int main(int argc, char** argv) {
     fclose(yyin);
 
     printf("Programa sintaticamente correto.\n");
-    imprimeArvore(raiz);
+    mkdir("build", 0777);                       /* garante a pasta; se já existe, não faz nada */
+    imprimeArvore(raiz, arquivoArvore);         /* grava a árvore no arquivo */
+    printf("Árvore gravada em %s\n", arquivoArvore);
     return 0;
-}
-
-/* Uma linha "a, b, c : int;" vira três DECL numa LISTA_DECL. O tipo só é
-   conhecido depois dos nomes, então ele é carimbado aqui, no fim; "resto" é
-   emendado só depois, para não carimbar as declarações das linhas seguintes. */
-static No* declara(char* nome, int linha, No* outros, Tipo tipo, No* resto) {
-    No* lista = criaNo(LISTA_DECL, linha, NULL,
-                       criaNo(DECL, linha, nome, NULL, NULL, NULL), outros, NULL);   /* primeiro nome + os outros */
-    No* p;
-
-    for (p = lista; p; p = p->filho2) p->filho1->tipo = tipo;   /* carimba o tipo em cada DECL */
-    for (p = lista; p->filho2; p = p->filho2) ;                 /* anda até o fim da lista */
-    p->filho2 = resto;                                          /* emenda as linhas seguintes */
-    return lista;
 }
 
 /* Chamada pelo Bison quando o parser trava. */

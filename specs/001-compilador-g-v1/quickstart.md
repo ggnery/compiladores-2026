@@ -135,7 +135,7 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 
 | Teste | Esperado |
 |---|---|
-| `./g-v1 testes/Outros/ok1.g` | imprime o percurso da árvore |
+| `./g-v1 testes/Outros/ok1.g` | grava o percurso da árvore em `build/arvore.txt` |
 | conferência manual | a árvore corresponde ao programa: `BLOCO` com declarações à esquerda e comandos à direita; `SE_CMD` com três filhos |
 
 ### Fase 5 — tabela de símbolos (US3)

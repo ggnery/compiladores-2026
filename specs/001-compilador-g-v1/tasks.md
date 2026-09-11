@@ -98,7 +98,7 @@ mensagem exata do enunciado com a linha correta.
 
 **Objetivo**: a análise sintática monta a AST na memória e o programa consegue imprimi-la.
 
-**Teste independente**: `./g-v1 testes/Outros/ok1.g` imprime um percurso da árvore que corresponde ao
+**Teste independente**: `./g-v1 testes/Outros/ok1.g` grava em `build/arvore.txt` um percurso da árvore que corresponde ao
 programa de entrada.
 
 - [x] T027 [US2] Criar `ast.h` com o `enum Especie`, o `enum Tipo`, a `struct no` (campos `especie`, `linha`, `lexema`, `tipo`, `filho1`, `filho2`, `filho3`) e os protótipos, exatamente como em `data-model.md` seção 1
@@ -109,11 +109,11 @@ programa de entrada.
 - [x] T032 [US2] Adicionar as ações de `ListaComando` e `ListaDeclVar` em `g-v1.y`, encadeando à direita (`filho1` = item, `filho2` = resto, `NULL` no fim), como o `lstStmt` de `materiais/examples/ex2/simpleLang.y`
 - [x] T033 [US2] Adicionar as ações de `Bloco`, `VarSection` e `Programa` em `g-v1.y`, garantindo a invariante: no nó `BLOCO`, **declarações em `filho1` e comandos em `filho2`** (é o que a Seção 6 do enunciado exige e o que faz o percurso semântico funcionar)
 - [x] T034 [US2] Declarar a variável global `No* raiz;` em `g-v1.y` e atribuí-la na ação de `Programa`
-- [x] T035 [P] [US2] Implementar `imprimeArvore(No* raiz)` em `ast.c`: percurso recursivo em formato de galhos (`├──`/`└──`), imprimindo espécie, lexema, tipo e linha de cada nó
+- [x] T035 [P] [US2] Implementar `imprimeArvore(No* raiz, const char* nomeArquivo)` em `ast.c`: grava no arquivo um percurso recursivo em formato de galhos (`├──`/`└──`), imprimindo espécie, lexema, tipo e linha de cada nó
 - [x] T036 [P] [US2] Implementar `nomeEspecie(Especie e)` em `ast.c`: `switch` que devolve o nome legível de cada espécie (mesma ideia do `obtemEspecieNoEnumLin` do professor)
-- [x] T037 [US2] Chamar `imprimeArvore(raiz)` na `main()` de `g-v1.y` depois de `yyparse()`
+- [x] T037 [US2] Chamar `imprimeArvore(raiz, arquivoArvore)` na `main()` de `g-v1.y` depois de `yyparse()`, gravando em `build/arvore.txt`
 - [x] T038 [US2] Acrescentar `ast.o` ao `Makefile` (regra de compilação e a ligação no alvo `g-v1`)
-- [x] T039 [US2] Rodar `./g-v1 testes/Outros/ok1.g` e conferir à mão que a árvore impressa corresponde ao programa: bloco com declarações à esquerda, `SE_CMD` com três filhos, lista de comandos encadeada
+- [x] T039 [US2] Rodar `./g-v1 testes/Outros/ok1.g` e conferir à mão que a árvore gravada em `build/arvore.txt` corresponde ao programa: bloco com declarações à esquerda, `SE_CMD` com três filhos, lista de comandos encadeada
 - [x] T040 [US2] Escrever `docs/EXPLICACAO-fase2.md` em 1 página: o que é uma AST, por que a pilha semântica do Bison carrega ponteiros, e o que `$$`, `$1`, `$3` significam
 
 **Checkpoint**: existe uma AST na memória, impressa e conferida.

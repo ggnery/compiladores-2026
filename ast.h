@@ -66,8 +66,13 @@ typedef struct no {
    "lexema" já deve ser uma cópia: o Flex reaproveita o buffer de yytext. */
 No* criaNo(Especie especie, int linha, char* lexema, No* f1, No* f2, No* f3);
 
-/* Imprime a árvore inteira em formato de galhos, a partir da raiz. */
-void imprimeArvore(No* raiz);
+/* Monta a lista de uma linha "a, b, c : int;": um DECL por nome, todos com o
+   tipo da linha. "outros" são os nomes depois do primeiro; "resto" são as
+   declarações das linhas seguintes, emendadas no fim. */
+No* declara(char* nome, int linha, No* outros, Tipo tipo, No* resto);
+
+/* Grava a árvore inteira, em formato de galhos, no arquivo "nomeArquivo". */
+void imprimeArvore(No* raiz, const char* nomeArquivo);
 
 const char* nomeEspecie(Especie especie);
 

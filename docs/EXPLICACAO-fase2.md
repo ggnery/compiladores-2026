@@ -51,7 +51,7 @@ Duas regras valem para a árvore inteira:
    `filho2`, todo nome já foi declarado quando o uso aparece — é o que a Fase 4 vai usar.
 2. **Ausência é sempre `NULL`**, nunca um nó "vazio": lista vazia, `senao` inexistente e
    comando vazio (`;`). Por isso o `entao`, o `senao` e o corpo do `enquanto` também podem ser
-   `NULL` — e, na árvore impressa, um filho `NULL` simplesmente não aparece.
+   `NULL` — e, na árvore gravada, um filho `NULL` simplesmente não aparece.
 
 ## 3. Por que a pilha do Bison carrega ponteiros
 
@@ -139,18 +139,19 @@ o `ESCREVA_CMD` fica com a linha 5, o `ID x` com a 6 e o `MAIS_OP` com a 7.
 `principal { ; ; escreva 1; }` gera uma lista com **um** comando.
 
 **`x, y, z : int;` vira três `DECL`.** O tipo só aparece **depois** dos nomes, então a função
-`declara()` monta a lista da linha, carimba o tipo em cada `DECL` e só então emenda as
+`declara()`, do `ast.c`, monta a lista da linha, carimba o tipo em cada `DECL` e só então emenda as
 declarações das linhas seguintes — na ordem inversa, o tipo vazaria para elas.
 
 ## 7. Como demonstrar
 
 ```bash
 make
-./g-v1 testes/Outros/ok1.g
+./g-v1 testes/Outros/ok1.g     # Programa sintaticamente correto.
+                               # Árvore gravada em build/arvore.txt
+cat build/arvore.txt
 ```
 
 ```
-Programa sintaticamente correto.
 PROGRAMA  (linha 5)
 └── BLOCO  (linha 6)
     ├── LISTA_DECL  (linha 6)
@@ -166,14 +167,15 @@ PROGRAMA  (linha 5)
 O que conferir: declarações à esquerda do `BLOCO`, comandos à direita, e o `SE_CMD` da linha
 23 com **três** filhos — a condição e os dois `escreva`.
 
-A impressão fica em `ast.c`: `imprimeArvore` só confere se a raiz existe e chama `imprimeNo`,
-a função recursiva — cada nó imprime o prefixo herdado do pai, o seu galho e o rótulo, e chama
-`imprimeNo` para cada filho que não é `NULL`. O último filho usa `└──`; os outros, `├──`.
+A gravação fica em `ast.c`: `imprimeArvore` abre o arquivo, chama `imprimeNo` na raiz e fecha
+o arquivo. `imprimeNo` é a função recursiva — cada nó grava o prefixo herdado do pai, o seu
+galho e o rótulo, e chama `imprimeNo` para cada filho que não é `NULL`. O último filho usa
+`└──`; os outros, `├──`. O nome do arquivo (`build/arvore.txt`) é definido no `main` do `g-v1.y`.
 
 ## 8. Perguntas que podem cair
 
 **Por que uma `struct` só, e não uma por construção?** O percurso fica igual para todo nó —
-visitar `filho1`, `filho2`, `filho3` —, então uma única função recursiva (`imprimeNo`) imprime a árvore
+visitar `filho1`, `filho2`, `filho3` —, então uma única função recursiva (`imprimeNo`) grava a árvore
 inteira. O preço: o C não sabe o que `filho2` significa. Quem garante é a tabela do `ast.h`,
 respeitada nas ações do `g-v1.y`.
 
@@ -182,14 +184,16 @@ qualquer número de comandos. Cada `LISTA_CMD` guarda um comando em `filho1` e o
 `filho2`, como uma lista ligada — espelhando a regra `ListaComando : Comando ListaComando`.
 
 **Onde fica a árvore quando o parse termina?** Em `raiz`. O `yyparse()` devolve só um `int`;
-por isso a ação de `Programa` — a última redução — faz `raiz = $1`, e o `main` imprime a
-árvore depois.
+por isso a ação de `Programa` — a última redução — faz `raiz = $1`, e o `main` grava a
+árvore em `build/arvore.txt` depois.
 
-**Por que a variável `raiz` e o protótipo de `declara()` ficam em `%code { }` e não em
-`%{ %}`?** Os dois mencionam o tipo `No`. No `.c` gerado, o bloco `%{ %}` sai **antes** do
-`#include` do header que traz a `%union`, então lá o tipo `No` ainda não existe; o `%code { }`
-sai depois. O corpo de `declara()` fica no fim do `g-v1.y`, depois do segundo `%%`, e o
-protótipo de `yyerror`, que não usa `No`, continua em `%{ %}`.
+**Por que a variável `raiz` fica em `%code { }` e não em `%{ %}`?** Ela é do tipo `No*`. No
+`.c` gerado, o bloco `%{ %}` sai **antes** do `#include` do header que traz a `%union`, então
+lá o tipo `No` ainda não existe; o `%code { }` sai depois. O protótipo de `yyerror`, que não usa
+`No`, continua em `%{ %}`.
+
+**Por que `declara()` está no `ast.c` e não no `g-v1.y`?** Ela só usa `criaNo` e os campos do
+nó — nada do Bison. Fica junto das outras funções da árvore; o `g-v1.y` só a chama.
 
 **A espécie `STR_CONST` é usada?** Não. A gramática só aceita cadeia depois de `escreva`, e
 esse caso vira um `ESCREVA_STR` com a cadeia no lexema. A espécie ficou no `enum` do modelo de

@@ -10,7 +10,7 @@ Construir, **em cinco fases entregáveis**, um compilador didático em C para a 
 usando Flex (léxico) e Bison (sintático). Cada fase compila, roda e é demonstrável sozinha:
 
 1. **Léxico + sintático integrados** → reconhece se o programa é válido
-2. **AST** → constrói e imprime a árvore
+2. **AST** → constrói a árvore e a grava em `build/arvore.txt`
 3. **Pilha de tabelas de símbolos** → 4 operações de escopo
 4. **Analisador semântico** → percurso na AST checando escopo e tipos
 5. **Geração de código** → percurso na AST emitindo assembly MIPS
