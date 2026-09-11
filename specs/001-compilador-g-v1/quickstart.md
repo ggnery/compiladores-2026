@@ -58,14 +58,18 @@ raiz/                 <- só o que é escrito à mão
 ## 2. Rodar
 
 ```bash
-./g-v1 testes/ok1.g
+./g-v1 testes/Outros/ok1.g
 ```
 
 ## 3. Programa de teste (correto)
 
-`testes/ok1.g`:
+`testes/Outros/ok1.g`:
 
 ```
+/* Programa de teste em G-V1: soma os numeros de 1 a 10
+   e diz se o resultado e grande ou pequeno.
+   Este comentario ocupa mais de uma linha - o que e permitido. */
+
 principal
 { soma, i : int;
   c : car;
@@ -73,19 +77,26 @@ principal
 {
   soma = 0;
   i = 1;
+
   enquanto (i <= 10)
   {
     soma = soma + i;
     i = i + 1;
   }
+
   escreva "soma: ";
   escreva soma;
   novalinha;
+
   se (soma > 50) entao
     escreva "grande";
   senao
     escreva "pequeno";
   fimse
+  novalinha;
+
+  c = 'a';
+  escreva c;
   novalinha;
 }
 ```
@@ -102,7 +113,7 @@ Cada fase só é considerada pronta quando os testes abaixo passam.
 | Teste | Comando | Esperado |
 |---|---|---|
 | build | `make clean && make` | gera `./g-v1` sem erro |
-| caminho feliz | `./g-v1 testes/esqueleto.g` | `OK: reconheci a palavra principal.` |
+| caminho feliz | `./g-v1 testes/Outros/esqueleto.g` | `OK: reconheci a palavra principal.` |
 | sem argumento | `./g-v1` | mensagem de uso |
 | arquivo inexistente | `./g-v1 nao_existe.g` | mensagem de arquivo não aberto |
 | erro sintático | arquivo com `principal` duas vezes | `ERRO: syntax error ... - linha 2` |
@@ -111,11 +122,11 @@ Cada fase só é considerada pronta quando os testes abaixo passam.
 
 | Teste | Comando | Esperado |
 |---|---|---|
-| correto | `./g-v1 testes/ok1.g` | sem mensagem de erro |
-| caractere inválido | `./g-v1 testes/erro_lexico1.g` | `ERRO: CARACTERE INVÁLIDO <linha>` |
-| comentário aberto | `./g-v1 testes/erro_lexico2.g` | `ERRO: COMENTÁRIO NAO TERMINA <linha>` |
-| cadeia em 2 linhas | `./g-v1 testes/erro_lexico3.g` | `ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA <linha>` |
-| falta `fimse` | `./g-v1 testes/erro_sintatico.g` | `ERRO: ` e a linha |
+| correto | `./g-v1 testes/Outros/ok1.g` | sem mensagem de erro |
+| caractere inválido | `./g-v1 testes/Outros/erro_lexico1.g` | `ERRO: CARACTERE INVÁLIDO <linha>` |
+| comentário aberto | `./g-v1 testes/Outros/erro_lexico2.g` | `ERRO: COMENTÁRIO NAO TERMINA <linha>` |
+| cadeia em 2 linhas | `./g-v1 testes/Outros/erro_lexico3.g` | `ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA <linha>` |
+| falta `fimse` | `./g-v1 testes/Outros/erro_sintatico.g` | `ERRO: ` e a linha |
 
 Checagem extra desta fase: o `make` não deve imprimir **nenhum** aviso de conflito vindo do
 Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflitos).
@@ -124,7 +135,7 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 
 | Teste | Esperado |
 |---|---|
-| `./g-v1 testes/ok1.g` | imprime o percurso da árvore |
+| `./g-v1 testes/Outros/ok1.g` | imprime o percurso da árvore |
 | conferência manual | a árvore corresponde ao programa: `BLOCO` com declarações à esquerda e comandos à direita; `SE_CMD` com três filhos |
 
 ### Fase 5 — tabela de símbolos (US3)
@@ -140,7 +151,7 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 
 | Teste | Esperado |
 |---|---|
-| `testes/ok1.g` | sem erro |
+| `testes/Outros/ok1.g` | sem erro |
 | variável não declarada | `ERRO: ... nao declarada - linha N` |
 | redeclaração no mesmo escopo | `ERRO: ... ja declarada ...` |
 | `int` recebendo `car` | erro de tipo |
@@ -151,7 +162,7 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 
 | Teste | Esperado |
 |---|---|
-| `testes/ok1.g` | gera assembly MIPS |
+| `testes/Outros/ok1.g` | gera assembly MIPS |
 | rodar no MARS/SPIM | a saída é a que o programa G-V1 descreve |
 
 ## 5. Antes de entregar (15/10/2026)

@@ -40,7 +40,7 @@ typedef struct no {
    espécie          | filho1              | filho2            | filho3
    -----------------+---------------------+-------------------+-----------------
    PROGRAMA         | bloco principal     | -                 | -
-   BLOCO            | lista de declaração | lista de comandos | -   (f1 pode ser NULL)
+   BLOCO            | lista de declaração | lista de comandos | -   (f1 e f2 podem ser NULL)
    LISTA_DECL       | uma DECL            | resto da lista    | -   (f2 NULL no fim)
    LISTA_CMD        | um comando          | resto da lista    | -   (f2 NULL no fim)
    DECL             | -                   | -                 | -   lexema = nome, tipo = int/car
@@ -58,8 +58,9 @@ typedef struct no {
    ----------------------------------------------------------------------------
    "operador binário" = de OU_OP a DIV_OP;  "*_CONST" = INT_, CAR_ e STR_CONST.
 
-   Ausência é sempre NULL (lista vazia, senão inexistente), nunca um nó
-   "vazio". Assim um único teste de NULL cobre os três casos. */
+   Ausência é sempre NULL, nunca um nó "vazio": lista vazia, senão inexistente
+   e comando vazio (";"). Por isso o então, o senão e o corpo do enquanto também
+   podem ser NULL. Um único teste de NULL cobre os três casos. */
 
 /* Único ponto do projeto que faz malloc. Aborta se faltar memória.
    "lexema" já deve ser uma cópia: o Flex reaproveita o buffer de yytext. */

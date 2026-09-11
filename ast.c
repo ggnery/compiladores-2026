@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "ast.h"
 
 const char* nomeEspecie(Especie especie) {
@@ -59,121 +58,40 @@ No* criaNo(Especie especie, int linha, char* lexema, No* f1, No* f2, No* f3) {
     return no;
 }
 
-/* ---------- desenho da arvore ----------
+/* ---------- impressão da árvore ----------
 
-   Uma tela unica de bytes: a linha e' o nivel do no', a coluna e' a posicao
-   horizontal. As folhas vao ocupando colunas da esquerda para a direita e
-   cada pai fica centrado entre o primeiro e o ultimo filho - por isso
-   desenhaNo() so' escreve o pai depois de desenhar os filhos, e devolve a
-   coluna onde o centrou.
+   PROGRAMA  (linha 1)
+   └── BLOCO  (linha 2)
+       ├── LISTA_DECL  (linha 2)
+       │   └── DECL x : int  (linha 2)
+       └── LISTA_CMD  (linha 4)
 
-   Os tracos ficam guardados como os bytes 1..9 e viram UTF-8 so' na hora de
-   imprimir: assim cada celula ocupa 1 byte e a conta de coluna e' direta. */
+   Cada nó imprime o prefixo herdado dos pais, o seu galho e o rótulo.
+   O último filho usa └── e passa espaços aos netos; os outros usam ├──
+   e passam │, que continua a linha vertical. */
 
-#define NIVEIS   256    /* cada nivel da arvore gasta 2 linhas: rotulo e traco */
-#define COLUNAS  8192
-#define ESPACO   2      /* colunas em branco entre dois rotulos */
+static void imprimeNo(No* no, const char* prefixo, const char* galho, const char* recuo) {
+    No*  filhos[3] = { no->filho1, no->filho2, no->filho3 };
+    char proximo[1024];
+    int  i, ultimo = -1;
 
-enum { VERT = 1, HORIZ, CANTO_ESQ, CANTO_DIR, DESCE, SOBE, CRUZ, T_ESQ, T_DIR };
-static const char* TRACO[] = { "", "│", "─", "┌", "┐", "┬", "┴", "┼", "├", "┤" };
+    printf("%s%s%s", prefixo, galho, nomeEspecie(no->especie));
+    if (no->lexema)              printf(" %s", no->lexema);
+    if (no->tipo != TIPO_NENHUM) printf(" : %s", no->tipo == TIPO_INT ? "int" : "car");
+    printf("  (linha %d)\n", no->linha);   /* a linha do fonte guardada no nó */
 
-static char tela[NIVEIS][COLUNAS];
-static int  proxima;             /* primeira coluna livre para uma folha */
-static int  ocupada[NIVEIS];     /* primeira coluna livre de cada linha */
-static int  estourou;    /* arvore maior que a tela */
+    snprintf(proximo, sizeof proximo, "%s%s", prefixo, recuo);   /* prefixo dos filhos */
 
-/* Desenha o no' e a subarvore dele; devolve a coluna onde o rotulo ficou centrado. */
-static int desenhaNo(No* no, int linha) {
-    char rotulo[128];
-    int  centro[3], n = 0, i, c, inicio, meio, tam, esq, dir;
-    const char* tipo;
+    for (i = 0; i < 3; i++)             /* acha o último filho que existe */
+        if (filhos[i]) ultimo = i;
 
-    if (linha + 1 >= NIVEIS) {          /* fundo demais: nem desce */
-        estourou = 1;
-        return proxima < COLUNAS ? proxima : COLUNAS - 1;
+    for (i = 0; i < 3; i++) {
+        if (!filhos[i]) continue;       /* ausência é NULL: pula */
+        if (i == ultimo) imprimeNo(filhos[i], proximo, "└── ", "    ");
+        else             imprimeNo(filhos[i], proximo, "├── ", "│   ");
     }
-
-    tipo = no->tipo == TIPO_INT ? " : int" : no->tipo == TIPO_CAR ? " : car" : "";
-    if (no->lexema)
-        snprintf(rotulo, sizeof rotulo, "%s %s%s", nomeEspecie(no->especie), no->lexema, tipo);
-    else
-        snprintf(rotulo, sizeof rotulo, "%s%s", nomeEspecie(no->especie), tipo);
-    tam = (int) strlen(rotulo);
-
-    /* os filhos primeiro: sao eles que dizem onde o pai cabe */
-    if (no->filho1) centro[n++] = desenhaNo(no->filho1, linha + 2);
-    if (no->filho2) centro[n++] = desenhaNo(no->filho2, linha + 2);
-    if (no->filho3) centro[n++] = desenhaNo(no->filho3, linha + 2);
-
-    if (n == 0) {
-        inicio = proxima;                          /* folha: primeira coluna livre */
-        meio   = inicio + tam / 2;
-    } else {
-        meio   = (centro[0] + centro[n - 1]) / 2;  /* pai: no meio dos filhos */
-        inicio = meio - tam / 2;
-        if (inicio < 0) inicio = 0;
-    }
-
-    if (inicio < ocupada[linha]) {      /* pai mais largo que os filhos: empurra */
-        inicio = ocupada[linha];
-        meio   = inicio + tam / 2;
-    }
-
-    if (inicio + tam + ESPACO >= COLUNAS) {   /* largo demais */
-        estourou = 1;
-        return COLUNAS - 1;
-    }
-
-    memcpy(tela[linha] + inicio, rotulo, tam);
-    ocupada[linha] = inicio + tam + ESPACO;
-    if (ocupada[linha] > proxima) proxima = ocupada[linha];
-
-    if (n == 1 && meio == centro[0]) {
-        tela[linha + 1][meio] = VERT;   /* filho unico, bem embaixo do pai */
-    } else if (n > 0) {
-        /* a linha vai do ponto mais a' esquerda ao mais a' direita, contando o pai */
-        esq = centro[0] < meio ? centro[0] : meio;
-        dir = centro[n - 1] > meio ? centro[n - 1] : meio;
-        for (c = esq; c <= dir; c++) tela[linha + 1][c] = HORIZ;
-
-        for (i = 0; i < n; i++)
-            tela[linha + 1][centro[i]] = centro[i] == esq ? CANTO_ESQ
-                                       : centro[i] == dir ? CANTO_DIR
-                                       : DESCE;
-
-        switch (tela[linha + 1][meio]) {           /* o traco que sobe ate' o pai */
-            case CANTO_ESQ: tela[linha + 1][meio] = T_ESQ; break;   /* ┌ vira ├ */
-            case CANTO_DIR: tela[linha + 1][meio] = T_DIR; break;   /* ┐ vira ┤ */
-            case DESCE:     tela[linha + 1][meio] = CRUZ;  break;   /* ┬ vira ┼ */
-            default:        tela[linha + 1][meio] = SOBE;  break;
-        }
-    }
-    return meio;
 }
 
 void imprimeArvore(No* raiz) {
-    int l, c, fim;
-
-    if (!raiz) return;
-
-    memset(tela, ' ', sizeof tela);
-    memset(ocupada, 0, sizeof ocupada);
-    proxima  = 0;
-    estourou = 0;
-    desenhaNo(raiz, 0);
-
-    for (l = 0; l < NIVEIS; l++) {
-        for (fim = COLUNAS; fim > 0 && tela[l][fim - 1] == ' '; fim--)
-            ;                                   /* corta o rabo de espacos */
-        if (fim == 0) break;                    /* linha vazia: a arvore acabou */
-
-        for (c = 0; c < fim; c++) {
-            unsigned char ch = (unsigned char) tela[l][c];
-            if (ch >= VERT && ch <= T_DIR) printf("%s", TRACO[ch]);
-            else                           putchar(ch);
-        }
-        putchar('\n');
-    }
-
-    if (estourou) printf("(arvore grande demais para a tela: parte dela nao foi desenhada)\n");
+    if (raiz) imprimeNo(raiz, "", "", "");   /* a raiz não tem galho */
 }

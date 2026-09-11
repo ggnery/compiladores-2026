@@ -3,7 +3,8 @@
    Gramática da Seção 2 do enunciado. */
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>   /* stat(): para recusar diretório antes de entregar ao Flex */
+#include <string.h>     /* strstr(): distinguir estouro de pilha de erro sintático */
+#include <sys/stat.h>   /* stat(): recusar diretório antes de entregar ao Flex */
 
 /* definidos no código gerado pelo Flex, compilado à parte */
 extern int   yylineno;
@@ -14,107 +15,141 @@ extern FILE* yyin;
 void yyerror(char const* s);
 %}
 
+/* Vai para o g-v1.tab.h, ANTES da %union: o header precisa conhecer No e Tipo
+   porque a union os menciona, e o g-v1.l inclui esse header. */
+%code requires {
+    #include "ast.h"
+}
+
+/* Sai no .c depois do include do header, então No e Tipo já existem aqui. */
+%code {
+    static No* raiz;   /* a árvore pronta; a ação de Programa preenche */
+    static No* declara(char* nome, int linha, No* outros, Tipo tipo, No* resto);
+}
+
+/* O valor que cada símbolo carrega na pilha do parser. */
+%union {
+    char* lexema;   /* tokens que trazem texto */
+    No*   no;       /* trecho de árvore já montado */
+    Tipo  tipo;     /* só o não-terminal Tipo */
+}
+
 %token PRINCIPAL INT CAR LEIA ESCREVA NOVALINHA SE ENTAO SENAO FIMSE ENQUANTO
 %token OU E IGUAL DIFERENTE MAIORIGUAL MENORIGUAL
-%token IDENTIFICADOR INTCONST CARCONST CADEIACARACTERES
+
+/* estes quatro chegam do Flex com texto junto */
+%token <lexema> IDENTIFICADOR INTCONST CARCONST CADEIACARACTERES
+
+%type <no> Programa DeclPrograma Bloco VarSection ListaDeclVar DeclVar
+%type <no> ListaComando Comando
+%type <no> Expr OrExpr AndExpr EqExpr DesigExpr AddExpr MulExpr UnExpr PrimExpr
+%type <tipo> Tipo
+
+/* cada peça da pilha passa a carregar também a linha onde começou (@1, @2, ...) */
+%locations
 
 %start Programa
 
 %%
 /* ---------- estrutura ---------- */
 
-Programa      : DeclPrograma
+Programa      : DeclPrograma                                       { raiz = $1; }   /* guarda a árvore pronta */
               ;
 
-DeclPrograma  : PRINCIPAL Bloco
+DeclPrograma  : PRINCIPAL Bloco                                    { $$ = criaNo(PROGRAMA, @1.first_line, NULL, $2, NULL, NULL); }   /* raiz: o bloco */
               ;
 
-Bloco         : '{' ListaComando '}'
-              | VarSection '{' ListaComando '}'    /* com declarações: dois pares de chaves */
+Bloco         : '{' ListaComando '}'                               { $$ = criaNo(BLOCO, @1.first_line, NULL, NULL, $2, NULL); }   /* só comandos */
+              | VarSection '{' ListaComando '}'                    { $$ = criaNo(BLOCO, @1.first_line, NULL, $1, $3, NULL); }     /* declarações + comandos */
               ;
 
-VarSection    : '{' ListaDeclVar '}'
+VarSection    : '{' ListaDeclVar '}'                               { $$ = $2; }   /* repassa a lista, sem as chaves */
               ;
 
-/* ---------- declarações ---------- */
+/* ---------- declarações ----------
+   O tipo só aparece depois dos nomes, então declara() volta na lista já
+   montada e carimba o tipo em cada DECL daquela linha. */
 
-ListaDeclVar  : IDENTIFICADOR DeclVar ':' Tipo ';' ListaDeclVar
-              | IDENTIFICADOR DeclVar ':' Tipo ';'
+ListaDeclVar  : IDENTIFICADOR DeclVar ':' Tipo ';' ListaDeclVar    { $$ = declara($1, @1.first_line, $2, $4, $6); }     /* esta linha + as seguintes */
+              | IDENTIFICADOR DeclVar ':' Tipo ';'                 { $$ = declara($1, @1.first_line, $2, $4, NULL); }   /* última linha */
               ;
 
-DeclVar       : /* vazio */                        /* um nome só:  x : int; */
-              | ',' IDENTIFICADOR DeclVar          /* vários nomes:  x, y, z : int; */
+DeclVar       : /* vazio */                                        { $$ = NULL; }                                                                                                   /* só um nome:  x : int; */
+              | ',' IDENTIFICADOR DeclVar                          { $$ = criaNo(LISTA_DECL, @2.first_line, NULL, criaNo(DECL, @2.first_line, $2, NULL, NULL, NULL), $3, NULL); }   /* mais um nome:  , y */
               ;
 
-Tipo          : INT
-              | CAR
+Tipo          : INT                                                { $$ = TIPO_INT; }   /* int */
+              | CAR                                                { $$ = TIPO_CAR; }   /* car */
               ;
 
-/* ---------- comandos ---------- */
+/* ---------- comandos ----------
+   O comando vazio devolve NULL e a lista o descarta: nó "vazio" não existe.
+   O FIMSE fecha o se, por isso não há senão pendente. */
 
-ListaComando  : Comando
-              | Comando ListaComando
+ListaComando  : Comando                                            { $$ = $1 ? criaNo(LISTA_CMD, $1->linha, NULL, $1, NULL, NULL) : NULL; }   /* último comando */
+              | Comando ListaComando                               { $$ = $1 ? criaNo(LISTA_CMD, $1->linha, NULL, $1, $2, NULL) : $2; }       /* comando + resto */
               ;
 
-Comando       : ';'                                                 /* comando vazio */
-              | Expr ';'
-              | LEIA IDENTIFICADOR ';'
-              | ESCREVA Expr ';'
-              | ESCREVA CADEIACARACTERES ';'
-              | NOVALINHA ';'
-              | SE '(' Expr ')' ENTAO Comando FIMSE                 /* o FIMSE fecha o se: */
-              | SE '(' Expr ')' ENTAO Comando SENAO Comando FIMSE   /* não há senão pendente */
-              | ENQUANTO '(' Expr ')' Comando
-              | Bloco                                               /* bloco aninhado */
+Comando       : ';'                                                { $$ = NULL; }                                                                                                 /* vazio: não gera nó */
+              | Expr ';'                                           { $$ = $1; }                                                                                                   /* expressão solta */
+              | LEIA IDENTIFICADOR ';'                             { $$ = criaNo(LEIA_CMD, @1.first_line, NULL, criaNo(ID, @2.first_line, $2, NULL, NULL, NULL), NULL, NULL); }   /* leia: a variável */
+              | ESCREVA Expr ';'                                   { $$ = criaNo(ESCREVA_CMD, @1.first_line, NULL, $2, NULL, NULL); }                                             /* escreva: a expressão */
+              | ESCREVA CADEIACARACTERES ';'                       { $$ = criaNo(ESCREVA_STR, @1.first_line, $2, NULL, NULL, NULL); }                                             /* escreva: o texto */
+              | NOVALINHA ';'                                      { $$ = criaNo(NOVALINHA_CMD, @1.first_line, NULL, NULL, NULL, NULL); }                                         /* novalinha: sem filhos */
+              | SE '(' Expr ')' ENTAO Comando FIMSE                { $$ = criaNo(SE_CMD, @1.first_line, NULL, $3, $6, NULL); }                                                    /* se: condição, então */
+              | SE '(' Expr ')' ENTAO Comando SENAO Comando FIMSE  { $$ = criaNo(SE_CMD, @1.first_line, NULL, $3, $6, $8); }                                                      /* se: condição, então, senão */
+              | ENQUANTO '(' Expr ')' Comando                      { $$ = criaNo(ENQUANTO_CMD, @1.first_line, NULL, $3, $5, NULL); }                                              /* enquanto: condição, corpo */
+              | Bloco                                              { $$ = $1; }                                                                                                   /* bloco aninhado */
               ;
 
 /* ---------- expressões ----------
    A precedência está na cascata Expr -> OrExpr -> ... -> PrimExpr: quanto mais
-   fundo, mais forte o operador. Por isso não há %left nem %right. */
+   fundo, mais forte o operador. Por isso não há %left nem %right.
+   Cada regra de operador vira um nó; cada regra de passagem só repassa $1. */
 
-Expr          : OrExpr
-              | IDENTIFICADOR '=' Expr             /* atribuição: só um nome à esquerda */
+Expr          : OrExpr                                             { $$ = $1; }                                                                                              /* repassa */
+              | IDENTIFICADOR '=' Expr                             { $$ = criaNo(ATRIB, @2.first_line, NULL, criaNo(ID, @1.first_line, $1, NULL, NULL, NULL), $3, NULL); }   /* variável = expressão */
               ;
 
-OrExpr        : OrExpr OU AndExpr
-              | AndExpr
+OrExpr        : OrExpr OU AndExpr                                  { $$ = criaNo(OU_OP, @2.first_line, NULL, $1, $3, NULL); }   /* a || b */
+              | AndExpr                                            { $$ = $1; }                                                 /* repassa */
               ;
 
-AndExpr       : AndExpr E EqExpr
-              | EqExpr
+AndExpr       : AndExpr E EqExpr                                   { $$ = criaNo(E_OP, @2.first_line, NULL, $1, $3, NULL); }   /* a & b */
+              | EqExpr                                             { $$ = $1; }                                                /* repassa */
               ;
 
-EqExpr        : EqExpr IGUAL DesigExpr
-              | EqExpr DIFERENTE DesigExpr
-              | DesigExpr
+EqExpr        : EqExpr IGUAL DesigExpr                             { $$ = criaNo(IGUAL_OP, @2.first_line, NULL, $1, $3, NULL); }       /* a == b */
+              | EqExpr DIFERENTE DesigExpr                         { $$ = criaNo(DIFERENTE_OP, @2.first_line, NULL, $1, $3, NULL); }   /* a != b */
+              | DesigExpr                                          { $$ = $1; }                                                        /* repassa */
               ;
 
-DesigExpr     : DesigExpr '<' AddExpr
-              | DesigExpr '>' AddExpr
-              | DesigExpr MAIORIGUAL AddExpr
-              | DesigExpr MENORIGUAL AddExpr
-              | AddExpr
+DesigExpr     : DesigExpr '<' AddExpr                              { $$ = criaNo(MENOR_OP, @2.first_line, NULL, $1, $3, NULL); }        /* a < b */
+              | DesigExpr '>' AddExpr                              { $$ = criaNo(MAIOR_OP, @2.first_line, NULL, $1, $3, NULL); }        /* a > b */
+              | DesigExpr MAIORIGUAL AddExpr                       { $$ = criaNo(MAIORIGUAL_OP, @2.first_line, NULL, $1, $3, NULL); }   /* a >= b */
+              | DesigExpr MENORIGUAL AddExpr                       { $$ = criaNo(MENORIGUAL_OP, @2.first_line, NULL, $1, $3, NULL); }   /* a <= b */
+              | AddExpr                                            { $$ = $1; }                                                         /* repassa */
               ;
 
-AddExpr       : AddExpr '+' MulExpr
-              | AddExpr '-' MulExpr
-              | MulExpr
+AddExpr       : AddExpr '+' MulExpr                                { $$ = criaNo(MAIS_OP, @2.first_line, NULL, $1, $3, NULL); }    /* a + b */
+              | AddExpr '-' MulExpr                                { $$ = criaNo(MENOS_OP, @2.first_line, NULL, $1, $3, NULL); }   /* a - b */
+              | MulExpr                                            { $$ = $1; }                                                    /* repassa */
               ;
 
-MulExpr       : MulExpr '*' UnExpr
-              | MulExpr '/' UnExpr
-              | UnExpr
+MulExpr       : MulExpr '*' UnExpr                                 { $$ = criaNo(MULT_OP, @2.first_line, NULL, $1, $3, NULL); }   /* a * b */
+              | MulExpr '/' UnExpr                                 { $$ = criaNo(DIV_OP, @2.first_line, NULL, $1, $3, NULL); }    /* a / b */
+              | UnExpr                                             { $$ = $1; }                                                   /* repassa */
               ;
 
-UnExpr        : '-' PrimExpr                       /* menos unário:  -5 */
-              | '!' PrimExpr
-              | PrimExpr
+UnExpr        : '-' PrimExpr                                       { $$ = criaNo(NEG_OP, @1.first_line, NULL, $2, NULL, NULL); }   /* -a */
+              | '!' PrimExpr                                       { $$ = criaNo(NAO_OP, @1.first_line, NULL, $2, NULL, NULL); }   /* !a */
+              | PrimExpr                                           { $$ = $1; }                                                    /* repassa */
               ;
 
-PrimExpr      : IDENTIFICADOR
-              | CARCONST
-              | INTCONST
-              | '(' Expr ')'
+PrimExpr      : IDENTIFICADOR                                      { $$ = criaNo(ID, @1.first_line, $1, NULL, NULL, NULL); }          /* variável */
+              | CARCONST                                           { $$ = criaNo(CAR_CONST, @1.first_line, $1, NULL, NULL, NULL); }   /* 'a' */
+              | INTCONST                                           { $$ = criaNo(INT_CONST, @1.first_line, $1, NULL, NULL, NULL); }   /* 42 */
+              | '(' Expr ')'                                       { $$ = $2; }                                                       /* repassa, sem os parênteses */
               ;
 
 %%
@@ -127,7 +162,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    /* fopen aceita diretório; quem quebra e' o Flex, com mensagem em inglês. */
+    /* fopen aceita diretório; quem quebra é o Flex, com mensagem em inglês. */
     if (stat(argv[1], &info) == 0 && S_ISDIR(info.st_mode)) {
         printf("%s é um diretório, não um arquivo\n", argv[1]);
         return 1;
@@ -143,12 +178,32 @@ int main(int argc, char** argv) {
     fclose(yyin);
 
     printf("Programa sintaticamente correto.\n");
+    imprimeArvore(raiz);
     return 0;
+}
+
+/* Uma linha "a, b, c : int;" vira três DECL numa LISTA_DECL. O tipo só é
+   conhecido depois dos nomes, então ele é carimbado aqui, no fim; "resto" é
+   emendado só depois, para não carimbar as declarações das linhas seguintes. */
+static No* declara(char* nome, int linha, No* outros, Tipo tipo, No* resto) {
+    No* lista = criaNo(LISTA_DECL, linha, NULL,
+                       criaNo(DECL, linha, nome, NULL, NULL, NULL), outros, NULL);   /* primeiro nome + os outros */
+    No* p;
+
+    for (p = lista; p; p = p->filho2) p->filho1->tipo = tipo;   /* carimba o tipo em cada DECL */
+    for (p = lista; p->filho2; p = p->filho2) ;                 /* anda até o fim da lista */
+    p->filho2 = resto;                                          /* emenda as linhas seguintes */
+    return lista;
 }
 
 /* Chamada pelo Bison quando o parser trava. */
 void yyerror(char const* s) {
-    (void)s;   /* a mensagem do Bison vem em inglês; usamos a nossa */
+    /* O Bison chama yyerror também quando a pilha estoura; ali não há token
+       culpado, e chamar de erro sintático culparia um programa correto. */
+    if (s && strstr(s, "memory")) {
+        printf("ERRO: programa complexo demais para o analisador - linha %d\n", yylineno);
+        exit(1);
+    }
     printf("ERRO: sintatico proximo a \"%s\" - linha %d\n", yytext, yylineno);
     exit(1);
 }

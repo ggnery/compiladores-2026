@@ -22,7 +22,7 @@ dígitos". Cada ferramenta no problema que ela resolve bem.
 
 - **padrão**: a regra — `[A-Za-z_][A-Za-z0-9_]*`
 - **lexema**: o texto que apareceu no fonte — `soma`
-- **token**: a categoria devolvida ao sintático — `IDENTIFICADOR` (um inteiro, 268)
+- **token**: a categoria devolvida ao sintático — `IDENTIFICADOR` (um inteiro, 275)
 
 O léxico transforma `soma = 0;` em quatro tokens: `IDENTIFICADOR`, `'='`, `INTCONST`, `';'`.
 O sintático nunca vê os caracteres — só a sequência de tokens.
@@ -73,14 +73,14 @@ ao ver o fechamento. De brinde, `<COMENTARIO><<EOF>>` detecta o comentário que 
 
 ```
 ERRO: CARACTERE INVÁLIDO 6
-ERRO: COMENTÁRIO NAO TERMINA 8
+ERRO: COMENTÁRIO NAO TERMINA 4
 ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA 3
 ```
 
 | Mensagem | Regra que dispara |
 |---|---|
 | `CARACTERE INVÁLIDO` | a regra `.`, que é a última do arquivo — só chega o que ninguém quis |
-| `COMENTÁRIO NAO TERMINA` | `<COMENTARIO><<EOF>>` |
+| `COMENTÁRIO NAO TERMINA` | `<COMENTARIO><<EOF>>`, com a linha guardada quando o `/*` abriu |
 | `CADEIA ... MAIS DE UMA LINHA` | `\"[^\"\n]*` — abre aspas e chega ao fim da linha sem fechar |
 
 A cadeia válida (`\"[^\"\n]*\"`) casa **mais** caracteres que a versão sem fechamento, então
@@ -141,12 +141,12 @@ declarado é sintaticamente perfeito. Reconhecer a forma não é entender o sent
 
 ```bash
 make
-./g-v1 testes/ok1.g          # Programa sintaticamente correto.
-./g-v1 testes/ok2.g          # idem (cobre leia, todos os operadores, bloco aninhado)
-./g-v1 testes/erro_lexico1.g # ERRO: CARACTERE INVÁLIDO 6
-./g-v1 testes/erro_lexico2.g # ERRO: COMENTÁRIO NAO TERMINA 8
-./g-v1 testes/erro_lexico3.g # ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA 3
-./g-v1 testes/erro_sintatico.g # ERRO: sintatico proximo a "novalinha" - linha 8
+./g-v1 testes/Outros/ok1.g          # Programa sintaticamente correto. (+ a árvore, desde a Fase 2)
+./g-v1 testes/Outros/ok2.g          # idem (cobre leia, todos os operadores, bloco aninhado)
+./g-v1 testes/Outros/erro_lexico1.g # ERRO: CARACTERE INVÁLIDO 6
+./g-v1 testes/Outros/erro_lexico2.g # ERRO: COMENTÁRIO NAO TERMINA 4
+./g-v1 testes/Outros/erro_lexico3.g # ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA 3
+./g-v1 testes/Outros/erro_sintatico.g # ERRO: sintatico proximo a "novalinha" - linha 8
 ```
 
 ## 11. Perguntas que podem cair
@@ -163,7 +163,7 @@ o buffer de `yytext` no próximo token.
 **O que `yylex()` devolve no fim do arquivo?** O padrão do Flex é 0. O enunciado menciona
 -1; testado, funciona igual, porque o Bison trata **qualquer valor ≤ 0** como fim de entrada.
 
-**Por que o comentário não terminado acusa a última linha do arquivo, e não a linha em que
-ele abriu?** Porque o erro é *detectado* no `<<EOF>>` — que é o que o enunciado pede
-("o número da linha onde o erro foi encontrado"). Para apontar a linha de abertura bastaria
-guardar `yylineno` ao entrar no estado `COMENTARIO`.
+**Por que o comentário não terminado acusa a linha em que ele abriu?** O erro só é
+*detectado* no `<<EOF>>`, mas ali o `yylineno` já passou da última linha: no `erro_lexico2.g`,
+que tem 7 linhas, ele valia 8 — uma linha que não existe no fonte. Por isso a regra do `/*`
+guarda `yylineno` em `linhaComentario` ao abrir, e o erro reporta essa linha.

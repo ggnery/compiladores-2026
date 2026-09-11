@@ -26,7 +26,7 @@ em `testes/`, conforme `quickstart.md` — que é exatamente como o professor va
 **Objetivo**: ter as ferramentas certas e um programa de teste antes de escrever compilador.
 
 - [x] T001 Instalar o Bison 3.8.2 com `brew install bison` e acrescentar `export PATH="/opt/homebrew/opt/bison/bin:$PATH"` ao `~/.zshrc` (o `/usr/bin/bison` é 2.3 e não serve — ver `research.md` D10)
-- [x] T002 [P] Criar o arquivo `testes/ok1.g` com o programa correto de exemplo que está em `quickstart.md` seção 3
+- [x] T002 [P] Criar o arquivo `testes/Outros/ok1.g` com o programa correto de exemplo que está em `quickstart.md` seção 3
 - [x] T003 [P] Criar o `Makefile` na raiz com as variáveis `CC`, `BISON` e `FLEX`, alvos `g-v1`, `sintatico.o`, `lexico.o` e `clean`, seguindo o modelo de `materials/examples/ex1/Makefile`
 - [x] T004 Confirmar o ambiente rodando `bison --version` (precisa ser 3.8.x) e `flex --version` (2.6.4)
 
@@ -45,7 +45,7 @@ gramática de verdade. É a parte que mais confunde — resolver ela isolada eco
 - [x] T006 Escrever `main(int argc, char** argv)` no epílogo de `g-v1.y`: valida `argc`, faz `yyin = fopen(argv[1], "r")`, chama `yyparse()` e **fecha o arquivo** ao final (exigência da Seção 3.2 do enunciado)
 - [x] T007 Escrever `yyerror(char const* s)` no epílogo de `g-v1.y` imprimindo `ERRO: ` + mensagem + `yylineno`, terminando com `exit(1)`
 - [x] T008 [P] Criar `g-v1.l` mínimo: prólogo com `#include "g-v1.tab.h"`, `%option yylineno`, `%option noyywrap`, uma regra que consome espaços e uma regra `.` provisória
-- [x] T009 Rodar `make` e obter o executável `./g-v1`; rodar `./g-v1 testes/ok1.g` sem *crash*
+- [x] T009 Rodar `make` e obter o executável `./g-v1`; rodar `./g-v1 testes/Outros/ok1.g` sem *crash*
 
 **Checkpoint**: `make` produz `./g-v1`. A partir daqui é só preencher regras e produções.
 
@@ -58,7 +58,7 @@ gramática de verdade. É a parte que mais confunde — resolver ela isolada eco
 **Objetivo**: `./g-v1 arq.g` diz se o programa é léxica e sintaticamente válido, e reporta a
 linha do erro quando não é.
 
-**Teste independente**: `./g-v1 testes/ok1.g` não imprime nada; cada arquivo de erro imprime a
+**Teste independente**: `./g-v1 testes/Outros/ok1.g` não imprime nada; cada arquivo de erro imprime a
 mensagem exata do enunciado com a linha correta.
 
 ### Analisador léxico (`g-v1.l`)
@@ -80,10 +80,10 @@ mensagem exata do enunciado com a linha correta.
 ### Validação
 
 - [x] T020 [US1] Rodar `make` e confirmar, na saída do Bison, **zero** avisos de conflito — a gramática original tem 0 shift/reduce e 0 reduce/reduce (`research.md` D2); qualquer conflito significa erro de transcrição
-- [x] T021 [P] [US1] Criar `testes/erro_lexico1.g` (caractere `@` no meio do código) e `testes/ok2.g` (cobre `leia`, comando vazio, todos os operadores, bloco aninhado, menos unário e `CARCONST` com escape)
-- [x] T022 [P] [US1] Criar `testes/erro_lexico2.g` (comentário `/*` que nunca fecha)
-- [x] T023 [P] [US1] Criar `testes/erro_lexico3.g` (cadeia `"` com quebra de linha antes de fechar)
-- [x] T024 [P] [US1] Criar `testes/erro_sintatico.g` (comando `se` sem o `fimse`)
+- [x] T021 [P] [US1] Criar `testes/Outros/erro_lexico1.g` (caractere `@` no meio do código) e `testes/Outros/ok2.g` (cobre `leia`, comando vazio, todos os operadores, bloco aninhado, menos unário e `CARCONST` com escape)
+- [x] T022 [P] [US1] Criar `testes/Outros/erro_lexico2.g` (comentário `/*` que nunca fecha)
+- [x] T023 [P] [US1] Criar `testes/Outros/erro_lexico3.g` (cadeia `"` com quebra de linha antes de fechar)
+- [x] T024 [P] [US1] Criar `testes/Outros/erro_sintatico.g` (comando `se` sem o `fimse`)
 - [x] T025 [US1] Rodar os 5 testes da tabela "Fase 1" de `quickstart.md` e conferir mensagem e número de linha de cada um
 - [x] T026 [US1] Escrever `docs/EXPLICACAO-fase1.md` em 1 página: o que é token, o que o Flex gera, o que o Bison gera, e como o `.tab.h` liga os dois
 
@@ -98,23 +98,23 @@ mensagem exata do enunciado com a linha correta.
 
 **Objetivo**: a análise sintática monta a AST na memória e o programa consegue imprimi-la.
 
-**Teste independente**: `./g-v1 testes/ok1.g` imprime um percurso da árvore que corresponde ao
+**Teste independente**: `./g-v1 testes/Outros/ok1.g` imprime um percurso da árvore que corresponde ao
 programa de entrada.
 
-- [ ] T027 [US2] Criar `ast.h` com o `enum Especie`, o `enum Tipo`, a `struct no` (campos `especie`, `linha`, `lexema`, `tipo`, `filho1`, `filho2`, `filho3`) e os protótipos, exatamente como em `data-model.md` seção 1
-- [ ] T028 [US2] Implementar `criaNo()` em `ast.c`: único `malloc` do projeto, preenche os campos, inicia `tipo` como `TIPO_NENHUM` e aborta com mensagem se a memória acabar
-- [ ] T029 [US2] Adicionar `%union { char* lexema; No* no; }` em `g-v1.y`, marcar `%token <lexema>` nos 4 tokens com lexema e `%type <no>` em todos os não-terminais listados em `contracts/gramatica-bison.md`
-- [ ] T030 [US2] Adicionar as ações das expressões em `g-v1.y` (`PrimExpr` até `OrExpr` e `Expr`): folhas com `criaNo(ID/INT_CONST/CAR_CONST, yylineno, $1, NULL,NULL,NULL)`, binários com os dois operandos, e `{ $$ = $1; }` nas produções de repasse
-- [ ] T031 [US2] Adicionar as ações dos comandos em `g-v1.y` (`LEIA_CMD`, `ESCREVA_CMD`, `ESCREVA_STR`, `NOVALINHA_CMD`, `SE_CMD` com 3 filhos, `ENQUANTO_CMD`), seguindo a tabela de filhos de `data-model.md`
-- [ ] T032 [US2] Adicionar as ações de `ListaComando` e `ListaDeclVar` em `g-v1.y`, encadeando à direita (`filho1` = item, `filho2` = resto, `NULL` no fim), como o `lstStmt` de `materials/examples/ex2/simpleLang.y`
-- [ ] T033 [US2] Adicionar as ações de `Bloco`, `VarSection` e `Programa` em `g-v1.y`, garantindo a invariante: no nó `BLOCO`, **declarações em `filho1` e comandos em `filho2`** (é o que a Seção 6 do enunciado exige e o que faz o percurso semântico funcionar)
-- [ ] T034 [US2] Declarar a variável global `No* raiz;` em `g-v1.y` e atribuí-la na ação de `Programa`
-- [ ] T035 [P] [US2] Implementar `imprimeArvore(No* no, int nivel)` em `ast.c`: percurso recursivo com indentação por nível, imprimindo espécie, lexema e linha de cada nó
-- [ ] T036 [P] [US2] Implementar `nomeEspecie(Especie e)` em `ast.c`: `switch` que devolve o nome legível de cada espécie (mesma ideia do `obtemEspecieNoEnumLin` do professor)
-- [ ] T037 [US2] Chamar `imprimeArvore(raiz, 0)` na `main()` de `g-v1.y` depois de `yyparse()`
-- [ ] T038 [US2] Acrescentar `ast.o` ao `Makefile` (regra de compilação e a ligação no alvo `g-v1`)
-- [ ] T039 [US2] Rodar `./g-v1 testes/ok1.g` e conferir à mão que a árvore impressa corresponde ao programa: bloco com declarações à esquerda, `SE_CMD` com três filhos, lista de comandos encadeada
-- [ ] T040 [US2] Escrever `docs/EXPLICACAO-fase2.md` em 1 página: o que é uma AST, por que a pilha semântica do Bison carrega ponteiros, e o que `$$`, `$1`, `$3` significam
+- [x] T027 [US2] Criar `ast.h` com o `enum Especie`, o `enum Tipo`, a `struct no` (campos `especie`, `linha`, `lexema`, `tipo`, `filho1`, `filho2`, `filho3`) e os protótipos, exatamente como em `data-model.md` seção 1
+- [x] T028 [US2] Implementar `criaNo()` em `ast.c`: único `malloc` do projeto, preenche os campos, inicia `tipo` como `TIPO_NENHUM` e aborta com mensagem se a memória acabar
+- [x] T029 [US2] Adicionar `%union { char* lexema; No* no; Tipo tipo; }` em `g-v1.y`, marcar `%token <lexema>` nos 4 tokens com lexema e `%type <no>` em todos os não-terminais listados em `contracts/gramatica-bison.md`
+- [x] T030 [US2] Adicionar as ações das expressões em `g-v1.y` (`PrimExpr` até `OrExpr` e `Expr`): folhas com `criaNo(ID/INT_CONST/CAR_CONST, @1.first_line, $1, NULL,NULL,NULL)` (em vez de `yylineno`: com `%locations`, cada símbolo guarda a própria linha; dentro da ação o `yylineno` pode já ser o do *lookahead*), binários com os dois operandos, e `{ $$ = $1; }` nas produções de repasse
+- [x] T031 [US2] Adicionar as ações dos comandos em `g-v1.y` (`LEIA_CMD`, `ESCREVA_CMD`, `ESCREVA_STR`, `NOVALINHA_CMD`, `SE_CMD` com 3 filhos, `ENQUANTO_CMD`), seguindo a tabela de filhos de `data-model.md`
+- [x] T032 [US2] Adicionar as ações de `ListaComando` e `ListaDeclVar` em `g-v1.y`, encadeando à direita (`filho1` = item, `filho2` = resto, `NULL` no fim), como o `lstStmt` de `materiais/examples/ex2/simpleLang.y`
+- [x] T033 [US2] Adicionar as ações de `Bloco`, `VarSection` e `Programa` em `g-v1.y`, garantindo a invariante: no nó `BLOCO`, **declarações em `filho1` e comandos em `filho2`** (é o que a Seção 6 do enunciado exige e o que faz o percurso semântico funcionar)
+- [x] T034 [US2] Declarar a variável global `No* raiz;` em `g-v1.y` e atribuí-la na ação de `Programa`
+- [x] T035 [P] [US2] Implementar `imprimeArvore(No* raiz)` em `ast.c`: percurso recursivo em formato de galhos (`├──`/`└──`), imprimindo espécie, lexema, tipo e linha de cada nó
+- [x] T036 [P] [US2] Implementar `nomeEspecie(Especie e)` em `ast.c`: `switch` que devolve o nome legível de cada espécie (mesma ideia do `obtemEspecieNoEnumLin` do professor)
+- [x] T037 [US2] Chamar `imprimeArvore(raiz)` na `main()` de `g-v1.y` depois de `yyparse()`
+- [x] T038 [US2] Acrescentar `ast.o` ao `Makefile` (regra de compilação e a ligação no alvo `g-v1`)
+- [x] T039 [US2] Rodar `./g-v1 testes/Outros/ok1.g` e conferir à mão que a árvore impressa corresponde ao programa: bloco com declarações à esquerda, `SE_CMD` com três filhos, lista de comandos encadeada
+- [x] T040 [US2] Escrever `docs/EXPLICACAO-fase2.md` em 1 página: o que é uma AST, por que a pilha semântica do Bison carrega ponteiros, e o que `$$`, `$1`, `$3` significam
 
 **Checkpoint**: existe uma AST na memória, impressa e conferida.
 
@@ -153,7 +153,7 @@ base e desempilha, imprimindo o resultado.
 
 **Objetivo**: percorrer a AST checando escopo e tipos, reportando erro com a linha.
 
-**Teste independente**: `testes/ok1.g` passa em silêncio; cada teste de erro semântico imprime
+**Teste independente**: `testes/Outros/ok1.g` passa em silêncio; cada teste de erro semântico imprime
 `ERRO:` com a linha certa.
 
 - [ ] T051 [P] [US4] Criar `semantico.h` com o protótipo `void analisaSemantica(No* raiz);`
@@ -194,7 +194,7 @@ G-V1 descreve.
 - [ ] T072 [US5] Implementar em `codigo.c` a geração de `ATRIB`, `LEIA_CMD`, `ESCREVA_CMD`, `ESCREVA_STR` e `NOVALINHA_CMD` usando as `syscall` de E/S
 - [ ] T073 [US5] Implementar em `codigo.c` a geração de `SE_CMD` e `ENQUANTO_CMD` com rótulos únicos (contador global) e desvios condicionais
 - [ ] T074 [US5] Chamar `geraCodigo(raiz)` na `main()` de `g-v1.y` (só se a análise semântica passou) e acrescentar `codigo.o` ao `Makefile`
-- [ ] T075 [US5] Rodar `./g-v1 testes/ok1.g`, carregar o assembly gerado no MARS/SPIM e conferir que a saída bate com o esperado
+- [ ] T075 [US5] Rodar `./g-v1 testes/Outros/ok1.g`, carregar o assembly gerado no MARS/SPIM e conferir que a saída bate com o esperado
 - [ ] T076 [US5] Completar `docs/EXPLICACAO-fase5.md`: como o deslocamento de cada variável é decidido e por que o percurso das expressões é pós-ordem
 
 **Checkpoint**: o compilador está completo, do fonte ao assembly.

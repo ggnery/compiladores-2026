@@ -36,21 +36,26 @@ $(AST_O): ast.c ast.h
 # ------------------------- analisador sintatico -------------------------
 $(SINTATICO_C): g-v1.y
 	mkdir -p $(BUILD)
-	$(BISON) --header=$(SINTATICO_H) -o $(SINTATICO_C) g-v1.y
+	$(BISON) --defines=$(SINTATICO_H) -o $(SINTATICO_C) g-v1.y
 
 # "-I." para achar ast.h na raiz, ja' que sintatico.c mora em build/.
-$(SINTATICO_O): $(SINTATICO_C) ast.h
+# O bison gera .c e .h de uma vez; esta regra so' repara o .h se ele sumir.
+$(SINTATICO_H): $(SINTATICO_C)
+	@test -f $@ || $(BISON) --defines=$(SINTATICO_H) -o $(SINTATICO_C) g-v1.y
+
+$(SINTATICO_O): $(SINTATICO_C) $(SINTATICO_H) ast.h
 	$(CC) -I$(BUILD) -I. -c $(SINTATICO_C) -o $(SINTATICO_O)
 
 # -------------------------- analisador lexico ---------------------------
 # Depende de $(SINTATICO_C) porque e' naquele passo que o header nasce,
 # e o lexico precisa dele para saber o numero de cada token.
-$(LEXICO_C): g-v1.l $(SINTATICO_C)
+$(LEXICO_C): g-v1.l $(SINTATICO_H)
 	mkdir -p $(BUILD)
 	$(FLEX) -o $(LEXICO_C) g-v1.l
 
-$(LEXICO_O): $(LEXICO_C)
-	$(CC) -I$(BUILD) -c $(LEXICO_C) -o $(LEXICO_O)
+# "-I." tambem aqui: g-v1.tab.h passou a incluir ast.h (por causa da %union).
+$(LEXICO_O): $(LEXICO_C) ast.h
+	$(CC) -I$(BUILD) -I. -c $(LEXICO_C) -o $(LEXICO_O)
 
 # Apaga tudo que foi gerado. "-r" porque agora e' uma pasta inteira.
 clean:
