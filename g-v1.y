@@ -1,12 +1,10 @@
 %{
-/* g-v1.y - analisador sintático da linguagem G-V1
-   Gramática da Seção 2 do enunciado. */
+/* g-v1.y - analisador sintático da linguagem G-V1 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>     /* strstr(): distinguir estouro de pilha de erro sintático */
-#include <sys/stat.h>   /* stat(): recusar diretório antes de entregar ao Flex */
+#include <string.h>
+#include <sys/stat.h> 
 
-/* definidos no código gerado pelo Flex, compilado à parte */
 extern int   yylineno;
 extern char* yytext;
 extern int   yylex();
@@ -15,28 +13,25 @@ extern FILE* yyin;
 void yyerror(char const* s);
 %}
 
-/* Vai para o g-v1.tab.h, ANTES da %union: o header precisa conhecer No e Tipo
-   porque a union os menciona, e o g-v1.l inclui esse header. */
 %code requires {
     #include "ast.h"
 }
 
-/* Sai no .c depois do include do header, então No e Tipo já existem aqui. */
+/* Raiz da árvore sintática abstrata */
 %code {
     static No* raiz;   /* a árvore pronta; a ação de Programa preenche */
 }
 
 /* O valor que cada símbolo carrega na pilha do parser. */
 %union {
-    char* lexema;   /* tokens que trazem texto */
-    No*   no;       /* trecho de árvore já montado */
-    Tipo  tipo;     /* só o não-terminal Tipo */
+    char* lexema;
+    No*   no;
+    Tipo  tipo;
 }
 
 %token PRINCIPAL INT CAR LEIA ESCREVA NOVALINHA SE ENTAO SENAO FIMSE ENQUANTO
 %token OU E IGUAL DIFERENTE MAIORIGUAL MENORIGUAL
 
-/* estes quatro chegam do Flex com texto junto */
 %token <lexema> IDENTIFICADOR INTCONST CARCONST CADEIACARACTERES
 
 %type <no> Programa DeclPrograma Bloco VarSection ListaDeclVar DeclVar
@@ -44,7 +39,6 @@ void yyerror(char const* s);
 %type <no> Expr OrExpr AndExpr EqExpr DesigExpr AddExpr MulExpr UnExpr PrimExpr
 %type <tipo> Tipo
 
-/* cada peça da pilha passa a carregar também a linha onde começou (@1, @2, ...) */
 %locations
 
 %start Programa
@@ -65,9 +59,7 @@ Bloco         : '{' ListaComando '}'                               { $$ = criaNo
 VarSection    : '{' ListaDeclVar '}'                               { $$ = $2; }   /* repassa a lista, sem as chaves */
               ;
 
-/* ---------- declarações ----------
-   O tipo só aparece depois dos nomes, então declara() (ast.c) volta na lista já
-   montada e carimba o tipo em cada DECL daquela linha. */
+/* ---------- declarações ---------- */
 
 ListaDeclVar  : IDENTIFICADOR DeclVar ':' Tipo ';' ListaDeclVar    { $$ = declara($1, @1.first_line, $2, $4, $6); }     /* esta linha + as seguintes */
               | IDENTIFICADOR DeclVar ':' Tipo ';'                 { $$ = declara($1, @1.first_line, $2, $4, NULL); }   /* última linha */
@@ -81,9 +73,7 @@ Tipo          : INT                                                { $$ = TIPO_I
               | CAR                                                { $$ = TIPO_CAR; }   /* car */
               ;
 
-/* ---------- comandos ----------
-   O comando vazio devolve NULL e a lista o descarta: nó "vazio" não existe.
-   O FIMSE fecha o se, por isso não há senão pendente. */
+/* ---------- comandos ---------- */
 
 ListaComando  : Comando                                            { $$ = $1 ? criaNo(LISTA_CMD, $1->linha, NULL, $1, NULL, NULL) : NULL; }   /* último comando */
               | Comando ListaComando                               { $$ = $1 ? criaNo(LISTA_CMD, $1->linha, NULL, $1, $2, NULL) : $2; }       /* comando + resto */
@@ -101,10 +91,7 @@ Comando       : ';'                                                { $$ = NULL; 
               | Bloco                                              { $$ = $1; }                                                                                                   /* bloco aninhado */
               ;
 
-/* ---------- expressões ----------
-   A precedência está na cascata Expr -> OrExpr -> ... -> PrimExpr: quanto mais
-   fundo, mais forte o operador. Por isso não há %left nem %right.
-   Cada regra de operador vira um nó; cada regra de passagem só repassa $1. */
+/* ---------- expressões ---------- */
 
 Expr          : OrExpr                                             { $$ = $1; }                                                                                              /* repassa */
               | IDENTIFICADOR '=' Expr                             { $$ = criaNo(ATRIB, @2.first_line, NULL, criaNo(ID, @1.first_line, $1, NULL, NULL, NULL), $3, NULL); }   /* variável = expressão */
@@ -186,8 +173,6 @@ int main(int argc, char** argv) {
 
 /* Chamada pelo Bison quando o parser trava. */
 void yyerror(char const* s) {
-    /* O Bison chama yyerror também quando a pilha estoura; ali não há token
-       culpado, e chamar de erro sintático culparia um programa correto. */
     if (s && strstr(s, "memory")) {
         printf("ERRO: programa complexo demais para o analisador - linha %d\n", yylineno);
         exit(1);

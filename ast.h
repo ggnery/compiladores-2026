@@ -1,14 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
-/* ast.h - nó da árvore sintática abstrata da linguagem G-V1 (Fase 2)
+/* ast.h - árvore sintática abstrata da linguagem G-V1  */
 
-   Uma struct só para todos os nós: "especie" diz o que o nó é, e os três
-   filhos significam coisas diferentes conforme a espécie. A tabela lá
-   embaixo é o contrato que dá sentido a filho1/filho2/filho3. */
-
-/* Os sufixos _CMD, _OP e _CONST evitam colisão com os nomes dos tokens que
-   o Bison gera em g-v1.tab.h (LEIA, OU, E, IGUAL, ...). */
 typedef enum {
     /* estrutura */
     PROGRAMA, BLOCO, LISTA_DECL, DECL, LISTA_CMD,
@@ -26,54 +20,25 @@ typedef enum {
 typedef enum { TIPO_INT, TIPO_CAR, TIPO_NENHUM } Tipo;
 
 typedef struct no {
-    Especie     especie;
-    int         linha;     /* o enunciado exige guardar a linha junto do item léxico */
-    char*       lexema;    /* nome ou texto da constante; NULL nas demais espécies */
-    Tipo        tipo;      /* só a Fase 4 preenche, exceto em DECL */
+    Especie     especie;   /* espécie do nó */
+    int         linha;     /* linha no programa fonte */
+    char*       lexema;    /* nome ou texto da constante */
+    Tipo        tipo;      /* int ou car; TIPO_NENHUM enquanto não se sabe */
     struct no*  filho1;
     struct no*  filho2;
     struct no*  filho3;
 } No;
 
-/* Significado dos filhos, por espécie
-   ----------------------------------------------------------------------------
-   espécie          | filho1              | filho2            | filho3
-   -----------------+---------------------+-------------------+-----------------
-   PROGRAMA         | bloco principal     | -                 | -
-   BLOCO            | lista de declaração | lista de comandos | -   (f1 e f2 podem ser NULL)
-   LISTA_DECL       | uma DECL            | resto da lista    | -   (f2 NULL no fim)
-   LISTA_CMD        | um comando          | resto da lista    | -   (f2 NULL no fim)
-   DECL             | -                   | -                 | -   lexema = nome, tipo = int/car
-   LEIA_CMD         | nó ID               | -                 | -
-   ESCREVA_CMD      | expressão           | -                 | -
-   ESCREVA_STR      | -                   | -                 | -   lexema = a cadeia
-   NOVALINHA_CMD    | -                   | -                 | -
-   SE_CMD           | condição            | comando do então  | comando do senão (NULL se não há)
-   ENQUANTO_CMD     | condição            | corpo             | -
-   ATRIB            | nó ID (lado esq.)   | expressão (dir.)  | -
-   operador binário | operando esquerdo   | operando direito  | -
-   NEG_OP, NAO_OP   | operando            | -                 | -
-   ID               | -                   | -                 | -   lexema = nome
-   *_CONST          | -                   | -                 | -   lexema = o texto lido
-   ----------------------------------------------------------------------------
-   "operador binário" = de OU_OP a DIV_OP;  "*_CONST" = INT_, CAR_ e STR_CONST.
-
-   Ausência é sempre NULL, nunca um nó "vazio": lista vazia, senão inexistente
-   e comando vazio (";"). Por isso o então, o senão e o corpo do enquanto também
-   podem ser NULL. Um único teste de NULL cobre os três casos. */
-
-/* Único ponto do projeto que faz malloc. Aborta se faltar memória.
-   "lexema" já deve ser uma cópia: o Flex reaproveita o buffer de yytext. */
+/* Cria um nó da árvore sintática abstrata. */
 No* criaNo(Especie especie, int linha, char* lexema, No* f1, No* f2, No* f3);
 
-/* Monta a lista de uma linha "a, b, c : int;": um DECL por nome, todos com o
-   tipo da linha. "outros" são os nomes depois do primeiro; "resto" são as
-   declarações das linhas seguintes, emendadas no fim. */
+/* Monta a LISTA_DECL de uma linha "a, b, c : int;" (um DECL por nome, todos com "tipo") e emenda "resto" no fim. */
 No* declara(char* nome, int linha, No* outros, Tipo tipo, No* resto);
 
-/* Grava a árvore inteira, em formato de galhos, no arquivo "nomeArquivo". */
+/* Salva a árvore inteira, em formato de galhos, no arquivo "nomeArquivo". */
 void imprimeArvore(No* raiz, const char* nomeArquivo);
 
+/* Retorna uma string da espécie de um nó. */
 const char* nomeEspecie(Especie especie);
 
 #endif /* AST_H */

@@ -37,7 +37,7 @@ Uma `struct` só para todos os nós:
 | `tipo` | `int` ou `car`; nesta fase só o `DECL` recebe |
 | `filho1`, `filho2`, `filho3` | os filhos |
 
-O significado de cada filho **depende da espécie** e está na tabela do `ast.h`. Exemplos:
+O significado de cada filho **depende da espécie** e está na tabela de filhos do `specs/001-compilador-g-v1/data-model.md`. Exemplos:
 
 | espécie | filho1 | filho2 | filho3 |
 |---|---|---|---|
@@ -176,7 +176,7 @@ galho e o rótulo, e chama `imprimeNo` para cada filho que não é `NULL`. O úl
 
 **Por que uma `struct` só, e não uma por construção?** O percurso fica igual para todo nó —
 visitar `filho1`, `filho2`, `filho3` —, então uma única função recursiva (`imprimeNo`) grava a árvore
-inteira. O preço: o C não sabe o que `filho2` significa. Quem garante é a tabela do `ast.h`,
+inteira. O preço: o C não sabe o que `filho2` significa. Quem garante é a tabela de filhos do `data-model.md`,
 respeitada nas ações do `g-v1.y`.
 
 **Por que a lista de comandos é encadeada?** A struct tem três filhos fixos e um bloco pode ter

@@ -2,10 +2,9 @@
 /* g-v1.l - analisador léxico da linguagem G-V1 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>     /* strdup */
-#include "g-v1.tab.h"   /* número de cada token, gerado pelo Bison */
+#include <string.h>
+#include "g-v1.tab.h"
 
-/* Roda antes de cada ação: guarda a linha do token, que o parser lê em @1. */
 #define YY_USER_ACTION  yylloc.first_line = yylloc.last_line = yylineno;
 
 void  erroLexico(char* mensagem, int linha);
@@ -13,7 +12,6 @@ static int linhaComentario;   /* linha onde o comentário aberto começou */
 static char* copia(const char* texto);
 %}
 
-/* yylineno: o Flex conta as linhas sozinho. noyywrap: só há um arquivo. */
 %option yylineno noyywrap
 
 DIGITO   [0-9]
@@ -26,14 +24,13 @@ LETRA    [A-Za-z_]
  /* ---------- comentários ---------- */
 "/*"                      { linhaComentario = yylineno; BEGIN(COMENTARIO); }   /* guarda onde abriu */
 <COMENTARIO>"*/"          BEGIN(INITIAL);
-<COMENTARIO>\n            ;                    /* "." não casa \n; sem esta regra ele seria ecoado */
+<COMENTARIO>\n            ;
 <COMENTARIO>.             ;
 <COMENTARIO><<EOF>>       { erroLexico("COMENTÁRIO NAO TERMINA", linhaComentario); }
 
 [ \t\r\n]+                ;    /* espaços: reconhece e não devolve token */
 
- /* ---------- palavras reservadas: antes da regra de IDENTIFICADOR ---------- */
- /* "principal" casa nas duas com o mesmo tamanho; no empate o Flex usa a primeira. */
+ /* ---------- palavras reservadas ---------- */
 "principal"               return PRINCIPAL;
 "int"                     return INT;
 "car"                     return CAR;
@@ -46,7 +43,7 @@ LETRA    [A-Za-z_]
 "fimse"                   return FIMSE;
 "enquanto"                return ENQUANTO;
 
- /* ---------- operadores de dois símbolos: antes dos de um ---------- */
+ /* ---------- operadores lógicos e relacionais ---------- */
 "||"                      return OU;
 "&"                       return E;
 "=="                      return IGUAL;
@@ -67,8 +64,7 @@ LETRA    [A-Za-z_]
 .                            { erroLexico("CARACTERE INVÁLIDO", yylineno); }   /* pega-tudo: sempre por último */
 
 %%
-/* O Flex reaproveita o buffer de yytext a cada token, então o lexema tem de ser
-   copiado agora. Aborta igual ao criaNo se faltar memória. */
+/* O Flex reaproveita o buffer de yytext a cada token, então o lexema tem de ser copiado */
 static char* copia(const char* texto) {
     char* c = strdup(texto);   /* cópia própria do texto */
     if (!c) {
