@@ -118,7 +118,7 @@ Cronograma do enunciado (Tabela 2). Hoje é **29/08/2026** — a Fase 1 vence em
 | — | Apresentação | 15, 19 e 22/10/2026 | saber explicar tudo |
 
 **Dependências**: a ordem é estritamente sequencial. A Fase 3 pode ser escrita e testada em
-paralelo à 2 (a tabela de símbolos não depende da AST), mas só é *usada* na Fase 4.
+paralelo à 2 (a tabela de símbolos só usa o `enum Tipo` do `ast.h`, não a árvore), mas só é *usada* na Fase 4.
 
 ## Rastreamento de Complexidade
 

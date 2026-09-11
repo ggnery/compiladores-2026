@@ -142,6 +142,7 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 
 | Teste | Esperado |
 |---|---|
+| `make teste-tabela` | as situações abaixo aparecem com `ok` e o total é `0 falha(s)` |
 | blocos aninhados com `x` nos dois | a busca de dentro acha o **interno** |
 | `x` só no bloco externo | a busca de dentro acha o **externo** |
 | nome inexistente | busca devolve vazio |

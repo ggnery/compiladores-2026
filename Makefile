@@ -23,15 +23,28 @@ LEXICO_O = $(BUILD)/lexico.o
 # ---- arvore sintatica abstrata (escrita a mao, nao e' gerada) ----
 AST_O = $(BUILD)/ast.o
 
-# Alvo principal: liga os dois objetos e produz o executavel.
+# ---- tabela de simbolos (escrita a mao) ----
+TABELA_O = $(BUILD)/tabela.o
+
+# Alvo principal: liga os objetos e produz o executavel.
 # O executavel fica na RAIZ porque o enunciado pede:  ./g-v1 teste.g
-g-v1: $(SINTATICO_O) $(LEXICO_O) $(AST_O)
-	$(CC) $(SINTATICO_O) $(LEXICO_O) $(AST_O) -o g-v1
+g-v1: $(SINTATICO_O) $(LEXICO_O) $(AST_O) $(TABELA_O)
+	$(CC) $(SINTATICO_O) $(LEXICO_O) $(AST_O) $(TABELA_O) -o g-v1
 
 # ------------------------------- arvore ---------------------------------
 $(AST_O): ast.c ast.h
 	mkdir -p $(BUILD)
 	$(CC) -c ast.c -o $(AST_O)
+
+# --------------------------- tabela de simbolos --------------------------
+$(TABELA_O): tabela.c tabela.h ast.h
+	mkdir -p $(BUILD)
+	$(CC) -c tabela.c -o $(TABELA_O)
+
+# Teste da tabela (Fase 3):  make teste-tabela
+teste-tabela: $(TABELA_O)
+	$(CC) -I. testes/Tabela/teste_tabela.c $(TABELA_O) -o $(BUILD)/teste_tabela
+	./$(BUILD)/teste_tabela
 
 # ------------------------- analisador sintatico -------------------------
 $(SINTATICO_C): g-v1.y
@@ -61,5 +74,5 @@ $(LEXICO_O): $(LEXICO_C) ast.h
 clean:
 	rm -rf $(BUILD) g-v1
 
-# Avisa ao make que "clean" e' um comando, nao um arquivo a ser criado.
-.PHONY: clean
+# Avisa ao make que "clean" e "teste-tabela" sao comandos, nao arquivos a criar.
+.PHONY: clean teste-tabela

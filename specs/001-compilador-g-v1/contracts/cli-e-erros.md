@@ -63,6 +63,6 @@ ERRO: operacao aritmetica exige operandos do tipo int - linha 18
 |---|---|
 | 1 — léxico + sintático | termina em silêncio (sem erro) |
 | 2 — AST | grava o percurso da árvore em `build/arvore.txt` |
-| 3 — tabela de símbolos | imprime os escopos ao entrar/sair dos blocos (para demonstração) |
+| 3 — tabela de símbolos | `make teste-tabela` imprime os escopos e confere as buscas; o `./g-v1` só passa a usar a tabela na fase 4 |
 | 4 — semântico | termina em silêncio; só fala se houver erro |
 | 5 — geração de código | emite o código assembly MIPS |

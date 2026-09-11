@@ -122,9 +122,9 @@ programa de entrada.
 
 ## Fase 5: US3 — Pilha de tabelas de símbolos (P3)
 
-**Meta do enunciado: 18/09/2026** · **Depende de**: Fase 2 (fundação) apenas
+**Meta do enunciado: 18/09/2026** · **Depende de**: Fase 2 (fundação) e o `enum Tipo` do `ast.h` (T027)
 
-> 💡 Esta fase **não depende da AST**. Pode ser escrita em paralelo com a US2 se sobrar tempo,
+> 💡 Esta fase não depende da árvore: da AST ela só usa o `enum Tipo` do `ast.h` (T027). Pode ser escrita em paralelo com a US2 se sobrar tempo,
 > ou por outra pessoa da dupla. Ela só passa a ser *usada* na US4.
 
 **Objetivo**: as 4 operações de escopo do enunciado (Seção 5) funcionando e demonstráveis.
@@ -132,16 +132,16 @@ programa de entrada.
 **Teste independente**: um `main` de teste empilha escopos, insere nomes, busca do topo para a
 base e desempilha, imprimindo o resultado.
 
-- [ ] T041 [P] [US3] Criar `tabela.h` com as structs `Entrada` (`lexema`, `tipo`, `linha`, `deslocamento`, `prox`) e `Escopo` (`entradas`, `abaixo`) e os 5 protótipos de `data-model.md` seção 2
-- [ ] T042 [US3] Implementar em `tabela.c` a operação (a) do enunciado: `iniciaPilha()` — topo da pilha vira `NULL`
-- [ ] T043 [US3] Implementar em `tabela.c` a operação (b): `empilhaEscopo()` — cria `Escopo` com tabela vazia e o coloca na cabeça da pilha
-- [ ] T044 [US3] Implementar em `tabela.c` a operação (d): `desempilhaEscopo()` — remove o escopo do topo e libera as entradas dele
-- [ ] T045 [US3] Implementar `insere(char* lexema, Tipo tipo, int linha)` em `tabela.c`: insere no escopo do topo e devolve `NULL` se o nome **já existe naquele mesmo escopo** (redeclaração)
-- [ ] T046 [US3] Implementar em `tabela.c` a operação (c): `busca(char* lexema)` — percorre **do topo para a base** e devolve a primeira entrada encontrada, ou `NULL`; é esta ordem que faz a variável local sobrepor a externa
-- [ ] T047 [P] [US3] Implementar `imprimePilha()` em `tabela.c` para demonstrar os escopos na apresentação
-- [ ] T048 [US3] Acrescentar `tabela.o` ao `Makefile`
-- [ ] T049 [US3] Testar as 6 situações da tabela "Fase 3" de `quickstart.md`: escopo interno vence o externo, busca sobe até a base, nome inexistente devolve vazio, desempilhar remove o topo
-- [ ] T050 [US3] Escrever `docs/EXPLICACAO-fase3.md` em 1 página: por que uma **pilha** de tabelas (e não uma tabela só), e por que a busca vai do topo para a base
+- [x] T041 [P] [US3] Criar `tabela.h` com as structs `Entrada` (`lexema`, `tipo`, `linha`, `deslocamento`, `prox`) e `Escopo` (`entradas`, `abaixo`) e os 5 protótipos de `data-model.md` seção 2
+- [x] T042 [US3] Implementar em `tabela.c` a operação (a) do enunciado: `iniciaPilha()` — topo da pilha vira `NULL`
+- [x] T043 [US3] Implementar em `tabela.c` a operação (b): `empilhaEscopo()` — cria `Escopo` com tabela vazia e o coloca na cabeça da pilha
+- [x] T044 [US3] Implementar em `tabela.c` a operação (d): `desempilhaEscopo()` — remove o escopo do topo e libera as entradas dele
+- [x] T045 [US3] Implementar `insere(char* lexema, Tipo tipo, int linha)` em `tabela.c`: insere no escopo do topo e devolve `NULL` se o nome **já existe naquele mesmo escopo** (redeclaração)
+- [x] T046 [US3] Implementar em `tabela.c` a operação (c): `busca(char* lexema)` — percorre **do topo para a base** e devolve a primeira entrada encontrada, ou `NULL`; é esta ordem que faz a variável local sobrepor a externa
+- [x] T047 [P] [US3] Implementar `imprimePilha()` em `tabela.c` para demonstrar os escopos na apresentação
+- [x] T048 [US3] Acrescentar `tabela.o` ao `Makefile`
+- [x] T049 [US3] Testar com `make teste-tabela` (`testes/Tabela/teste_tabela.c`) as situações da tabela de símbolos de `quickstart.md`: escopo interno vence o externo, busca sobe até a base, nome inexistente devolve vazio, desempilhar remove o topo
+- [x] T050 [US3] Escrever `docs/EXPLICACAO-fase3.md` em 1 página: por que uma **pilha** de tabelas (e não uma tabela só), e por que a busca vai do topo para a base
 
 **Checkpoint**: as 4 operações do enunciado existem, com nome e comportamento conferidos.
 
@@ -222,7 +222,7 @@ G-V1 descreve.
 - **Fundação (Fase 2)**: depende do Setup — **bloqueia todas as histórias**
 - **US1** (Fase 3): depende da Fundação
 - **US2** (Fase 4): depende da US1 (as ações semânticas entram na gramática já pronta)
-- **US3** (Fase 5): depende **só da Fundação** — pode andar em paralelo com a US2
+- **US3** (Fase 5): depende da Fundação e do `enum Tipo` do `ast.h` (T027) — pode andar em paralelo com a US2
 - **US4** (Fase 6): depende da US2 **e** da US3
 - **US5** (Fase 7): depende da US4
 - **Fechamento (Fase 8)**: depende de tudo
@@ -244,7 +244,7 @@ Setup → Fundação → US1 → US2 ─┐
 - **T021–T024** (os 4 arquivos de teste) — em paralelo
 - **T035 e T036** (impressão da árvore) e **T041/T047** (tabela) — arquivos diferentes
 - **T061–T064** (testes semânticos) — em paralelo
-- **Trabalho em dupla**: depois da US1, uma pessoa toca a US2 (AST) e a outra a US3 (tabela de símbolos), que não se cruzam. É o único ponto do trabalho com paralelismo real.
+- **Trabalho em dupla**: depois da US1, uma pessoa toca a US2 (AST) e a outra a US3 (tabela de símbolos), que só se cruzam no `enum Tipo` do `ast.h` (T027). É o único ponto do trabalho com paralelismo real.
 
 ---
 
