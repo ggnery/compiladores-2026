@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h> 
+#include <sys/stat.h>
+#include "semantico.h"
 
 extern int   yylineno;
 extern char* yytext;
@@ -163,10 +164,13 @@ int main(int argc, char** argv) {
 
     yyparse();     /* chama yylex() quantas vezes precisar */
     fclose(yyin);
-
     printf("Programa sintaticamente correto.\n");
+
+    analisaSemantica(raiz);                     /* no primeiro erro, avisa e encerra */
+    printf("Programa semanticamente correto.\n");
+
     mkdir("build", 0777);                       /* garante a pasta; se já existe, não faz nada */
-    imprimeArvore(raiz, arquivoArvore);         /* grava a árvore no arquivo */
+    imprimeArvore(raiz, arquivoArvore);         /* grava a árvore, já com os tipos anotados */
     printf("Árvore gravada em %s\n", arquivoArvore);
     return 0;
 }

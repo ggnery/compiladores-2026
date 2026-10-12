@@ -132,7 +132,7 @@ decide sinal, o sintático decide.
 | comentário aberto | léxico | `<COMENTARIO><<EOF>>` |
 | cadeia em duas linhas | léxico | padrão sem a aspa final |
 | falta `fimse` | sintático | `yyparse()` trava e chama `yyerror()` |
-| variável não declarada | **ninguém ainda** | é erro semântico — Fase 4 |
+| variável não declarada | semântico (Fase 4) | a `busca` na tabela de símbolos não acha o nome |
 
 Um programa pode passar por esta fase inteira e ainda estar errado: `x = y;` com `y` nunca
 declarado é sintaticamente perfeito. Reconhecer a forma não é entender o sentido.

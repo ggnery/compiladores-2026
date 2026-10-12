@@ -156,22 +156,22 @@ base e desempilha, imprimindo o resultado.
 **Teste independente**: `testes/Outros/ok1.g` passa em silêncio; cada teste de erro semântico imprime
 `ERRO:` com a linha certa.
 
-- [ ] T051 [P] [US4] Criar `semantico.h` com o protótipo `void analisaSemantica(No* raiz);`
-- [ ] T052 [US4] Implementar `erroSemantico(char* msg, int linha)` em `semantico.c`: imprime `ERRO: ` + mensagem + `- linha N` e encerra com `exit(1)`, no formato de `contracts/cli-e-erros.md`
-- [ ] T053 [US4] Implementar `visitaBloco(No* no)` em `semantico.c`: empilha escopo → visita as declarações (`filho1`) → visita os comandos (`filho2`) → desempilha escopo. É o percurso "esquerda antes da direita" descrito na Seção 6 do enunciado
-- [ ] T054 [US4] Implementar `visitaDeclaracoes(No* no)` em `semantico.c`: percorre a lista `LISTA_DECL` chamando `insere()`; se `insere()` devolver `NULL`, erro de redeclaração no mesmo escopo
-- [ ] T055 [US4] Implementar `Tipo visitaExpressao(No* no)` em `semantico.c` para as folhas: `INT_CONST` → `TIPO_INT`, `CAR_CONST` → `TIPO_CAR`, `ID` → `busca()` no escopo (erro "nao declarada" se não achar) e devolve o tipo da entrada
-- [ ] T056 [US4] Estender `visitaExpressao` em `semantico.c` para os operadores, aplicando a tabela de regras de tipo de `data-model.md` seção 3: aritméticos exigem `int`; relacionais e de igualdade exigem operandos do **mesmo** tipo e resultam `int`; lógicos exigem `int`
-- [ ] T057 [US4] Implementar a checagem de `ATRIB` em `semantico.c`: o tipo do lado direito precisa ser **igual** ao tipo da variável do lado esquerdo (não há conversão automática em G-V1)
-- [ ] T058 [US4] Implementar `visitaComando(No* no)` em `semantico.c` para `LEIA_CMD`, `ESCREVA_CMD`, `ESCREVA_STR`, `NOVALINHA_CMD` e o caso `BLOCO` (bloco aninhado → chama `visitaBloco`, criando escopo novo)
-- [ ] T059 [US4] Implementar em `semantico.c` a checagem de `SE_CMD` e `ENQUANTO_CMD`: a condição precisa ter tipo `int`; depois visita o corpo (e o `senao`, se `filho3` não for `NULL`)
-- [ ] T060 [US4] Chamar `iniciaPilha()` e `analisaSemantica(raiz)` na `main()` de `g-v1.y`, depois de `yyparse()`; acrescentar `semantico.o` ao `Makefile`
-- [ ] T061 [P] [US4] Criar `testes/erro_semantico1.g` (variável usada sem declarar)
-- [ ] T062 [P] [US4] Criar `testes/erro_semantico2.g` (mesmo nome declarado duas vezes no mesmo bloco)
-- [ ] T063 [P] [US4] Criar `testes/erro_semantico3.g` (variável `int` recebendo `car`, e `car + 1`)
-- [ ] T064 [P] [US4] Criar `testes/ok_escopo.g` com bloco interno redeclarando um nome do bloco externo — este arquivo tem que passar **sem** erro (sombreamento é permitido)
-- [ ] T065 [US4] Rodar os 6 casos da tabela "Fase 4" de `quickstart.md` e conferir mensagem e linha
-- [ ] T066 [US4] Escrever `docs/EXPLICACAO-fase4.md` em 1 página: por que declarações ficam à esquerda na árvore, e como o percurso mantém a pilha de escopos sincronizada com os blocos
+- [x] T051 [P] [US4] Criar `semantico.h` com o protótipo `void analisaSemantica(No* raiz);`
+- [x] T052 [US4] Implementar `erroSemantico(nome, mensagem, linha)` em `semantico.c`: imprime `ERRO: ` + mensagem + `- linha N` (com `variavel "nome"` antes, nos erros de variável) e encerra com `exit(1)`, no formato de `contracts/cli-e-erros.md`
+- [x] T053 [US4] Implementar `visitaBloco(No* no)` em `semantico.c`: empilha escopo (só se o bloco tem declarações, como nas Seções 5 e 7 do enunciado) → insere as declarações (`filho1`) → visita os comandos (`filho2`) → desempilha escopo. É o percurso "esquerda antes da direita" descrito na Seção 6 do enunciado
+- [x] T054 [US4] Percorrer a lista `LISTA_DECL` dentro do próprio `visitaBloco`, chamando `insere()`; se `insere()` devolver `NULL`, erro de redeclaração no mesmo escopo (é um laço curto — não virou a função separada `visitaDeclaracoes`)
+- [x] T055 [US4] Implementar `Tipo visitaExpressao(No* no)` em `semantico.c` para as folhas: `INT_CONST` → `TIPO_INT`, `CAR_CONST` → `TIPO_CAR`, `ID` → `busca()` no escopo (erro "nao declarada" se não achar) e devolve o tipo da entrada
+- [x] T056 [US4] Estender `visitaExpressao` em `semantico.c` para os operadores, aplicando a tabela de regras de tipo de `data-model.md` seção 3: aritméticos exigem `int`; relacionais e de igualdade exigem operandos do **mesmo** tipo e resultam `int`; lógicos exigem `int`. Pós-ordem (operandos antes do operador), e o tipo calculado fica anotado em `no->tipo`
+- [x] T057 [US4] Implementar a checagem de `ATRIB` em `semantico.c`: o tipo do lado direito precisa ser **igual** ao tipo da variável do lado esquerdo (não há conversão automática em G-V1)
+- [x] T058 [US4] Implementar `visitaComando(No* no)` em `semantico.c` para `LEIA_CMD`, `ESCREVA_CMD`, `ESCREVA_STR`, `NOVALINHA_CMD` e o caso `BLOCO` (bloco aninhado → chama `visitaBloco`, criando escopo novo)
+- [x] T059 [US4] Implementar em `semantico.c` a checagem de `SE_CMD` e `ENQUANTO_CMD`: a condição precisa ter tipo `int` (`visitaCondicao`); depois visita o corpo (e o `senao`, se `filho3` não for `NULL`)
+- [x] T060 [US4] Chamar `analisaSemantica(raiz)` na `main()` de `g-v1.y`, depois de `yyparse()` — a própria `analisaSemantica` chama `iniciaPilha()`; acrescentar `semantico.o` ao `Makefile`. A árvore passa a ser gravada depois do semântico, já com os tipos anotados
+- [x] T061 [P] [US4] Criar `testes/Outros/erro_semantico1.g` (aritmética com `car`: `c + 1`)
+- [x] T062 [P] [US4] Criar `testes/Outros/erro_semantico2.g` (operação lógica com `car`: `n > 0 & c`)
+- [x] T063 [P] [US4] Criar `testes/Outros/erro_semantico3.g` (condição do `enquanto` do tipo `car`). Variável não declarada, redeclaração, `int` recebendo `car` e relacional entre tipos diferentes já estão nos testes do professor, em `testes/ErroSemantico/`
+- [x] T064 [P] [US4] Criar `testes/Outros/ok_escopo.g` com bloco interno redeclarando, com outro tipo, um nome do bloco externo, e um bloco irmão — este arquivo tem que passar **sem** erro (sombreamento é permitido)
+- [x] T065 [US4] Rodar os casos da tabela "Fase 6 — semântico" de `quickstart.md` e conferir mensagem e linha
+- [x] T066 [US4] Escrever `docs/EXPLICACAO-fase4.md`: por que declarações ficam à esquerda na árvore, e como o percurso mantém a pilha de escopos sincronizada com os blocos
 
 **Checkpoint**: programas com sentido passam; programas sem sentido são recusados com a linha.
 

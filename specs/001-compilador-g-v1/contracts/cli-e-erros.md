@@ -48,14 +48,27 @@ ERRO: sintatico proximo a "fimse" - linha 9
 
 ### Erros semânticos
 
-Mesmo padrão — `ERRO:` + descrição + linha, e a compilação termina:
+Mesmo padrão — `ERRO:` + descrição + ` - linha N`, e a compilação termina no primeiro erro:
 
 ```
 ERRO: variavel "x" nao declarada - linha 14
 ERRO: variavel "x" ja declarada neste escopo - linha 6
 ERRO: tipos incompativeis na atribuicao - linha 11
 ERRO: operacao aritmetica exige operandos do tipo int - linha 18
+ERRO: operacao relacional exige operandos do mesmo tipo - linha 26
+ERRO: operacao logica exige operandos do tipo int - linha 8
+ERRO: condicao deve ser do tipo int - linha 7
 ```
+
+| Mensagem | Quando | Linha acusada |
+|---|---|---|
+| `variavel "x" nao declarada` | nome que a busca não acha em nenhum escopo aberto | a do uso |
+| `variavel "x" ja declarada neste escopo` | nome repetido nas declarações do mesmo bloco | a da segunda declaração |
+| `tipos incompativeis na atribuicao` | `x = e` com `e` de outro tipo | a do `=` |
+| `operacao aritmetica exige operandos do tipo int` | `+ - * /` ou `-` unário com operando `car` | a do operador |
+| `operacao relacional exige operandos do mesmo tipo` | `< > <= >= == !=` entre `int` e `car` | a do operador |
+| `operacao logica exige operandos do tipo int` | `\|\|`, `&` ou `!` com operando `car` | a do operador |
+| `condicao deve ser do tipo int` | condição de `se`/`enquanto` do tipo `car` | a da condição |
 
 ## Saída em caso de sucesso, por fase
 
@@ -64,5 +77,5 @@ ERRO: operacao aritmetica exige operandos do tipo int - linha 18
 | 1 — léxico + sintático | termina em silêncio (sem erro) |
 | 2 — AST | grava o percurso da árvore em `build/arvore.txt` |
 | 3 — tabela de símbolos | `make teste-tabela` imprime os escopos e confere as buscas; o `./g-v1` só passa a usar a tabela na fase 4 |
-| 4 — semântico | termina em silêncio; só fala se houver erro |
+| 4 — semântico | imprime `Programa semanticamente correto.` e grava a árvore, agora com o tipo de cada expressão |
 | 5 — geração de código | emite o código assembly MIPS |

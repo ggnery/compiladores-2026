@@ -26,10 +26,16 @@ AST_O = $(BUILD)/ast.o
 # ---- tabela de simbolos (escrita a mao) ----
 TABELA_O = $(BUILD)/tabela.o
 
+# ---- analisador semantico (escrito a mao) ----
+SEMANTICO_O = $(BUILD)/semantico.o
+
+# Todos os pedacos que formam o compilador.
+OBJETOS = $(SINTATICO_O) $(LEXICO_O) $(AST_O) $(TABELA_O) $(SEMANTICO_O)
+
 # Alvo principal: liga os objetos e produz o executavel.
 # O executavel fica na RAIZ porque o enunciado pede:  ./g-v1 teste.g
-g-v1: $(SINTATICO_O) $(LEXICO_O) $(AST_O) $(TABELA_O)
-	$(CC) $(SINTATICO_O) $(LEXICO_O) $(AST_O) $(TABELA_O) -o g-v1
+g-v1: $(OBJETOS)
+	$(CC) $(OBJETOS) -o g-v1
 
 # ------------------------------- arvore ---------------------------------
 $(AST_O): ast.c ast.h
@@ -46,6 +52,11 @@ teste-tabela: $(TABELA_O)
 	$(CC) -I. testes/Tabela/teste_tabela.c $(TABELA_O) -o $(BUILD)/teste_tabela
 	./$(BUILD)/teste_tabela
 
+# ------------------------- analisador semantico -------------------------
+$(SEMANTICO_O): semantico.c semantico.h tabela.h ast.h
+	mkdir -p $(BUILD)
+	$(CC) -c semantico.c -o $(SEMANTICO_O)
+
 # ------------------------- analisador sintatico -------------------------
 $(SINTATICO_C): g-v1.y
 	mkdir -p $(BUILD)
@@ -56,7 +67,7 @@ $(SINTATICO_C): g-v1.y
 $(SINTATICO_H): $(SINTATICO_C)
 	@test -f $@ || $(BISON) --defines=$(SINTATICO_H) -o $(SINTATICO_C) g-v1.y
 
-$(SINTATICO_O): $(SINTATICO_C) $(SINTATICO_H) ast.h
+$(SINTATICO_O): $(SINTATICO_C) $(SINTATICO_H) ast.h semantico.h
 	$(CC) -I$(BUILD) -I. -c $(SINTATICO_C) -o $(SINTATICO_O)
 
 # -------------------------- analisador lexico ---------------------------

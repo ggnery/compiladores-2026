@@ -103,12 +103,12 @@ escopo 1:  y (int, linha 2)  x (int, linha 2)
 0 falha(s)
 ```
 
-## 7. Como a Fase 4 vai usar
+## 7. Como a Fase 4 usa
 
-O analisador semântico percorre a árvore e conversa com a tabela a cada nó:
+O analisador semântico (`semantico.c`) percorre a árvore e conversa com a tabela a cada nó:
 
 ```
-BLOCO                         → empilhaEscopo()
+BLOCO                         → empilhaEscopo()           (se o bloco tem declarações)
 ├── LISTA_DECL
 │   └── DECL x : int          → insere("x", int, linha)   NULL = redeclaração
 └── LISTA_CMD

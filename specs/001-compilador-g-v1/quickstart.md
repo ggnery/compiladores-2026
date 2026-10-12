@@ -152,12 +152,16 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 
 | Teste | Esperado |
 |---|---|
-| `testes/Outros/ok1.g` | sem erro |
-| variável não declarada | `ERRO: ... nao declarada - linha N` |
-| redeclaração no mesmo escopo | `ERRO: ... ja declarada ...` |
-| `int` recebendo `car` | erro de tipo |
-| `car + 1` | erro: aritmética exige `int` |
-| sombreamento (local sobre externa) | **sem** erro |
+| `testes/Outros/ok1.g` (e os 5 de `testes/Corretos/`) | `Programa semanticamente correto.`; a árvore gravada traz o tipo de cada expressão |
+| `testes/Outros/ok_escopo.g` (sombreamento) | **sem** erro; na árvore, o `x` de dentro é `car` e o de fora, `int` |
+| `testes/ErroSemantico/fatorial-VariavelNaoDeclaradaLin19.g` | `ERRO: variavel "i" nao declarada - linha 19` |
+| `testes/ErroSemantico/NotaEmConceito-VariavelNaoDeclaradaNoEsopoAtual.g` | `ERRO: variavel "conceito" nao declarada - linha 66` |
+| `testes/ErroSemantico/fatorial-VariavelRedeclaradaNoMesmoEscopoLin9.g` | `ERRO: variavel "fatorial" ja declarada neste escopo - linha 9` |
+| `testes/ErroSemantico/NotaEmConceito-VariavelDeTipoIncopativelComExpressaoLin19.g` | `ERRO: tipos incompativeis na atribuicao - linha 19` |
+| `testes/ErroSemantico/NotaEmConceito-Sub-expressoesDeTiposIncompativeisLin26.g` | `ERRO: operacao relacional exige operandos do mesmo tipo - linha 26` |
+| `testes/Outros/erro_semantico1.g` (`c + 1`) | `ERRO: operacao aritmetica exige operandos do tipo int - linha 9` |
+| `testes/Outros/erro_semantico2.g` (`&` com `car`) | `ERRO: operacao logica exige operandos do tipo int - linha 8` |
+| `testes/Outros/erro_semantico3.g` (condição `car`) | `ERRO: condicao deve ser do tipo int - linha 7` |
 
 ### Fase 7 — geração de código (US5)
 

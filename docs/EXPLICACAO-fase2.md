@@ -147,6 +147,7 @@ declarações das linhas seguintes — na ordem inversa, o tipo vazaria para ela
 ```bash
 make
 ./g-v1 testes/Outros/ok1.g     # Programa sintaticamente correto.
+                               # Programa semanticamente correto.   (desde a Fase 4)
                                # Árvore gravada em build/arvore.txt
 cat build/arvore.txt
 ```
