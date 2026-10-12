@@ -44,7 +44,15 @@ Emitidos por `yyerror()`, começando com `ERRO:` e um espaço, com a linha:
 
 ```
 ERRO: sintatico proximo a "fimse" - linha 9
+ERRO: sintatico proximo ao fim do arquivo - linha 1
+ERRO: programa complexo demais para o analisador - linha 9995
 ```
+
+| Mensagem | Quando | Linha acusada |
+|---|---|---|
+| `sintatico proximo a "<lexema>"` | o parser trava num token | a do token que revelou o erro (`yylineno`) — num token que falta, é a linha do **seguinte** |
+| `sintatico proximo ao fim do arquivo` | o arquivo acaba no meio do programa (`yytext` vazio); ex.: `testes/Outros/esqueleto.g`, só com `principal` | a do último token (`yylloc`); `yylineno` já estaria depois da última linha |
+| `programa complexo demais para o analisador` | a pilha do Bison (10000 posições) estoura — um bloco com ~10000 comandos | `yylineno` |
 
 ### Erros semânticos
 

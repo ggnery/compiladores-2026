@@ -72,7 +72,8 @@ No* criaNo(Especie especie, int linha, char* lexema, No* f1, No* f2, No* f3);
 - `lexema` vem do Flex por `strdup(yytext)` — o Flex reaproveita o buffer de `yytext`, então
   copiar é obrigatório.
 - `tipo` nasce `TIPO_NENHUM`; o parser preenche o dos `DECL`, e a Fase 4 o de cada expressão.
-- Listas vazias e `senao` ausente são representados por `NULL`, nunca por um nó "vazio".
+- Listas vazias e `senao` ausente são representados por `NULL`, nunca por um nó "vazio". (Na
+  árvore gravada, um `NULL` seguido de outro filho sai como a linha `(vazio)`; é só impressão.)
 
 ---
 

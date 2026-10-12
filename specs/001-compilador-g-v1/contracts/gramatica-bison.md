@@ -1,7 +1,8 @@
 # Contrato 2 — Gramática (entrada do Bison, `g-v1.y`)
 
-Transcrição direta da Seção 2 do enunciado. **Verificado com o Bison: 0 conflitos
-shift/reduce e 0 reduce/reduce** — não são necessárias declarações `%left`/`%right`.
+Transcrição direta da Seção 2 do enunciado, mais **uma** produção: `PrimExpr : '+' INTCONST`
+(ver notas). **Verificado com o Bison: 0 conflitos shift/reduce e 0 reduce/reduce** — não são
+necessárias declarações `%left`/`%right`.
 
 ## Declarações do arquivo
 
@@ -68,15 +69,19 @@ DesigExpr     : DesigExpr '<' AddExpr | DesigExpr '>' AddExpr
 AddExpr       : AddExpr '+' MulExpr | AddExpr '-' MulExpr | MulExpr ;
 MulExpr       : MulExpr '*' UnExpr | MulExpr '/' UnExpr | UnExpr ;
 UnExpr        : '-' PrimExpr | '!' PrimExpr | PrimExpr ;
-PrimExpr      : IDENTIFICADOR | CARCONST | INTCONST | '(' Expr ')' ;
+PrimExpr      : IDENTIFICADOR | CARCONST | INTCONST | '+' INTCONST | '(' Expr ')' ;
 ```
 
 ## Notas de leitura da gramática
 
 - **A precedência já está na gramática.** `Expr` desce por níveis até `PrimExpr`; quanto mais
   fundo, mais forte o operador. Por isso `1 + 2 * 3` sai certo sem nenhuma diretiva.
+- **`'+' INTCONST` é a única produção fora da Seção 2.** A Tabela 1 diz que `INTCONST` pode ter
+  sinal; o léxico não põe sinal (D12), o `-` já vinha de `UnExpr : '-' PrimExpr` e o `+` vem
+  daqui. Só antes de constante: `+5` passa, `+a` é erro.
 - **Não há bloco vazio**: `ListaComando` exige pelo menos um comando. Um bloco "vazio" se
-  escreve `{ ; }`.
+  escreve `{ ; }`. A Seção 5 diz que o bloco "pode ou não ter uma lista de comandos", mas a
+  gramática formal manda: `{ x : int; } { }` dá `ERRO: sintatico proximo a "}"`.
 - **Um bloco é um comando** (`Comando : Bloco`), e é isso que permite o aninhamento.
 - **`senao` não é ambíguo** porque todo `se` fecha com `fimse`.
 - Só o lado esquerdo de uma atribuição pode ser um `IDENTIFICADOR` puro — a gramática não

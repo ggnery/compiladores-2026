@@ -27,33 +27,42 @@ O `Makefile` faz, nesta ordem:
 
 | Passo | Comando | O que produz |
 |---|---|---|
-| 1 | `bison --header=build/g-v1.tab.h -o build/sintatico.c g-v1.y` | `build/sintatico.c` e `build/g-v1.tab.h` (números dos tokens) |
-| 2 | `flex -o build/lexico.c g-v1.l` | `build/lexico.c` |
-| 3 | `gcc -Ibuild -c ...` | os `.o`, dentro de `build/` |
-| 4 | `gcc ... -o g-v1` | o executável `g-v1`, na raiz |
+| 1 | `bison --defines=build/g-v1.tab.h -o build/sintatico.c src/g-v1.y` e `touch build/g-v1.tab.h` | `build/sintatico.c` e `build/g-v1.tab.h` (números dos tokens) |
+| 2 | `flex -o build/lexico.c src/g-v1.l` | `build/lexico.c` |
+| 3 | `gcc -Ibuild -Isrc -c build/sintatico.c ...` (idem `lexico.c`) e `gcc -c src/ast.c ...` (idem `tabela.c`, `semantico.c`, `codigo.c`) | os 6 `.o`, dentro de `build/` |
+| 4 | `gcc build/sintatico.o build/lexico.o build/ast.o build/tabela.o build/semantico.o build/codigo.o -o g-v1` | o executável `g-v1`, na raiz |
 
 ### Onde cada coisa fica
 
 ```
-raiz/                 <- só o que é escrito à mão
-├── g-v1.l                 fonte do analisador léxico
-├── g-v1.y                 fonte do analisador sintático
+raiz/
 ├── Makefile
+├── src/              <- só o que é escrito à mão
+│   ├── g-v1.l             analisador léxico (Flex)
+│   ├── g-v1.y             analisador sintático + main (Bison)
+│   ├── ast.h, ast.c       árvore sintática abstrata
+│   ├── tabela.h, tabela.c pilha de tabelas de símbolos
+│   ├── semantico.h, semantico.c
+│   └── codigo.h, codigo.c gerador de código MIPS
 ├── testes/
-├── g-v1                   <- executável (na raiz: o enunciado pede ./g-v1 teste.g)
+├── docs/                  EXPLICACAO-faseN.md
+├── g-v1              <- executável (na raiz: o enunciado pede ./g-v1 teste.g)
 └── build/            <- só o que é gerado; pode apagar a qualquer momento
-    ├── sintatico.c        gerado pelo Bison
-    ├── g-v1.tab.h         gerado pelo Bison
-    ├── lexico.c           gerado pelo Flex
-    ├── sintatico.o
-    └── lexico.o
+    ├── sintatico.c, g-v1.tab.h   gerados pelo Bison
+    ├── lexico.c                  gerado pelo Flex
+    ├── *.o                       os 6 objetos
+    └── arvore.txt                gravada pelo ./g-v1
 ```
 
 `make clean` apaga a pasta `build/` inteira e o executável.
 
 > O `g-v1.tab.h` gerado pelo Bison é incluído **pelos dois** lados (`.y` e `.l`) — é ele que faz
 > léxico e sintático concordarem sobre o valor inteiro de cada token. É por isso que, no
-> Makefile, `build/lexico.c` depende de `build/sintatico.c`: o header nasce naquele passo.
+> Makefile, `build/lexico.c` depende do header, que nasce no passo do Bison.
+>
+> O `touch` do passo 1 existe porque o Bison grava o `.h` alguns milissegundos **antes** do
+> `.c`. Como a regra do `.h` depende do `.c`, no `make` do Linux o `.h` parecia sempre
+> desatualizado e o `make` nunca dizia "up to date". O `touch` deixa o `.h` mais novo.
 
 ## 2. Rodar
 
@@ -113,20 +122,21 @@ Cada fase só é considerada pronta quando os testes abaixo passam.
 | Teste | Comando | Esperado |
 |---|---|---|
 | build | `make clean && make` | gera `./g-v1` sem erro |
-| caminho feliz | `./g-v1 testes/Outros/esqueleto.g` | `OK: reconheci a palavra principal.` |
-| sem argumento | `./g-v1` | mensagem de uso |
-| arquivo inexistente | `./g-v1 nao_existe.g` | mensagem de arquivo não aberto |
-| erro sintático | arquivo com `principal` duas vezes | `ERRO: syntax error ... - linha 2` |
+| só `principal` | `./g-v1 testes/Outros/esqueleto.g` | `ERRO: sintatico proximo ao fim do arquivo - linha 1` (o `OK: reconheci a palavra principal.` era da gramática provisória da fundação) |
+| sem argumento | `./g-v1` | `Uso correto: ./g-v1 nome_do_arquivo` |
+| arquivo inexistente | `./g-v1 nao_existe.g` | `Não foi possível abrir o arquivo nao_existe.g` |
+| erro sintático | arquivo com `principal` duas vezes | `ERRO: sintatico proximo a "principal" - linha 2` |
 
 ### Fase 3 — léxico + sintático (US1)
 
 | Teste | Comando | Esperado |
 |---|---|---|
 | correto | `./g-v1 testes/Outros/ok1.g` | sem mensagem de erro |
-| caractere inválido | `./g-v1 testes/Outros/erro_lexico1.g` | `ERRO: CARACTERE INVÁLIDO <linha>` |
-| comentário aberto | `./g-v1 testes/Outros/erro_lexico2.g` | `ERRO: COMENTÁRIO NAO TERMINA <linha>` |
-| cadeia em 2 linhas | `./g-v1 testes/Outros/erro_lexico3.g` | `ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA <linha>` |
-| falta `fimse` | `./g-v1 testes/Outros/erro_sintatico.g` | `ERRO: ` e a linha |
+| caractere inválido | `./g-v1 testes/Outros/erro_lexico1.g` | `ERRO: CARACTERE INVÁLIDO 6` |
+| comentário aberto | `./g-v1 testes/Outros/erro_lexico2.g` | `ERRO: COMENTÁRIO NAO TERMINA 4` |
+| cadeia em 2 linhas | `./g-v1 testes/Outros/erro_lexico3.g` | `ERRO: CADEIA DE CARACTERES OCUPA MAIS DE UMA LINHA 3` |
+| falta `fimse` | `./g-v1 testes/Outros/erro_sintatico.g` | `ERRO: sintatico proximo a "novalinha" - linha 8` |
+| os 5 de `testes/ErroSintatico/` | `./g-v1 testes/ErroSintatico/<arquivo>.g` | 4 deles acusam a linha **seguinte** à do nome — de propósito; tabela e porquê em `docs/EXPLICACAO-fase1.md`, seção 11 |
 
 Checagem extra desta fase: o `make` não deve imprimir **nenhum** aviso de conflito vindo do
 Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflitos).
@@ -178,6 +188,7 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 | `testes/Corretos/Soma.g` | `2`, `4`, `3` | `O valor da soma da progressao aritmetica e: 26` |
 | `testes/Corretos/NotaEmConceito.g` | `5` / `6` / `8` / `10` | `Conceito: D` / `C` / `B` / `A` |
 | `testes/Corretos/SeqOrdenada.g` | `3`, `1`, `2`, `3`, `0` | `ORDENADA` |
+| `testes/Outros/ok_borda.g` | — | `5 5` / `1` / `C:\` |
 
 ## 5. Antes de entregar (15/10/2026)
 
@@ -185,6 +196,27 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 make clean && make          # tem que funcionar do zero, só com "make"
 ```
 
-- [ ] `g-v1.l`, `g-v1.y`, tabela de símbolos (+`.h`), semântico (+`.h`), gerador (+`.h`), `Makefile`
-- [ ] Testado num Linux (ou com gcc/bison equivalentes aos do professor)
+- [x] `make clean && make` do zero (T077)
+- [x] Lista da Seção 8, agora em `src/`: `g-v1.l`, `g-v1.y`, tabela de símbolos (+`.h`), semântico (+`.h`), gerador (+`.h`), e o `Makefile` na raiz (T080)
+- [x] Testado em Linux: Debian trixie, gcc 14.2, flex 2.6.4, bison 3.8.2 (T078)
 - [ ] Consigo explicar cada arquivo sem consultar
+
+### Gerar o zip
+
+**Não** compactar a pasta como está: ela tem `build/` e o `g-v1` compilado no Mac. Com eles
+no zip, o `make` do professor pode dizer "up to date" e deixar um executável de Mac, que não
+roda no Linux. Duas formas certas:
+
+```bash
+make clean                                         # 1) apaga build/ e g-v1; depois compactar
+
+git archive --format=zip -o entrega.zip HEAD       # 2) só o que está no git: o .gitignore
+                                                   #    já deixa de fora build/, g-v1, *.o, *.asm
+unzip -l entrega.zip                               # conferir: sem build/, sem g-v1, sem .o
+```
+
+Cuidados com o `git archive`: ele empacota o último **commit** (o que não foi commitado fica de
+fora), e leva também `materiais/`, `.claude/` e `.specify/`. Para levar só o trabalho:
+`git archive --format=zip -o entrega.zip HEAD Makefile src testes docs`. Para testar a extração
+no Mac, use `tar -xf entrega.zip`: o `unzip` do macOS se perde no `ç` de um nome em
+`testes/ErroSintatico/`.

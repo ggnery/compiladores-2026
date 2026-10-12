@@ -119,10 +119,11 @@ receberia `IDENTIFICADOR INTCONST` sem operador entre eles. Testado:
 ERRO: sintatico proximo a "-1" - linha 6
 ```
 
-**Solução**: `INTCONST` é `[0-9]+` (sem sinal), e o sinal fica por conta da gramática, que
-já tem `UnExpr → '-' PrimExpr`. Assim `a = -5;` continua válido — é menos unário aplicado à
-constante 5 — e `b = a-1;` funciona. É a solução padrão em compiladores reais: o léxico não
-decide sinal, o sintático decide.
+**Solução**: `INTCONST` é `[0-9]+` (sem sinal), e o sinal fica por conta da gramática. O `-`
+já vinha de `UnExpr → '-' PrimExpr`: `a = -5;` é menos unário aplicado à constante 5. O `+`
+ganhou uma produção própria, `PrimExpr → '+' INTCONST`, e `b = +5;` também passa. E `b = a-1;`
+continua funcionando. É a solução padrão em compiladores reais: o léxico não decide sinal, o
+sintático decide.
 
 ## 9. Onde cada erro é detectado
 
@@ -149,7 +150,55 @@ make
 ./g-v1 testes/Outros/erro_sintatico.g # ERRO: sintatico proximo a "novalinha" - linha 8
 ```
 
-## 11. Perguntas que podem cair
+## 11. Revisão final: o que mudou e o que ficou
+
+Uma revisão comparou o compilador com o enunciado, linha a linha. Nesta fase, três correções:
+
+| Correção | Onde | Por quê |
+|---|---|---|
+| regra `<<EOF>> return EOF;` | `g-v1.l` | a Seção 3.1 pede que `yylex()` devolva -1 no fim do arquivo (D13) |
+| `PrimExpr → '+' INTCONST` | `g-v1.y` | a Tabela 1 diz que `INTCONST` pode ter sinal `+`; o `-` já existia (D12) |
+| mensagem de erro no fim do arquivo | `g-v1.l` e `g-v1.y` | antes saía `ERRO: sintatico proximo a "" - linha 2`, num arquivo de uma linha só |
+
+**O erro no fim do arquivo.** Quando o arquivo acaba no meio do programa, não há token para
+mostrar (`yytext` vazio) e o `yylineno` já passou da última linha — o mesmo problema do
+comentário não terminado. A solução: o `YY_USER_ACTION` só atualiza `yylloc` em token de
+verdade (estado `INITIAL`, texto que não começa com espaço), então `yylloc` fica com a linha do
+**último token**, e o `yyerror` usa essa linha:
+
+```
+./g-v1 testes/Outros/esqueleto.g    # o arquivo é só "principal"
+ERRO: sintatico proximo ao fim do arquivo - linha 1
+```
+
+E três decisões que ficaram, de propósito:
+
+**a. Em 4 dos 5 testes de `testes/ErroSintatico/`, o erro sai na linha seguinte à do nome do
+arquivo.**
+
+| Arquivo | Linha no nome | Acusada | Por quê |
+|---|---|---|---|
+| `...AbreChavesEspeardoLin18` | 18 | 19, `"conceito"` | a 18 está em branco; a falta do `{` é percebida no `conceito` |
+| `...DeclaraçãoNaoEnvolvidaEmChavesLin15-17` | 15–17 | 16, `":"` | dentro do intervalo: `conceito` pode começar um comando, o `:` não |
+| `...FechaChavesEspeardoLin49` | 49 | 50, `"senao"` | a 49 está em branco; a falta do `}` é percebida no `senao` |
+| `...FimseFaltanoLIn60` | 60 | 61, `"}"` | a 60 está em branco; a falta do `fimse` é percebida no `}` |
+| `...Ponto-e-vrigulaFaltandoLin20` | 20 | 21, `"escreva"` | a falta do `;` do fim da 20 é percebida no `escreva` da 21 |
+
+Um parser LALR só percebe que falta um token quando lê o **seguinte**, e a Seção 3.2 pede a
+linha onde o erro foi **detectado**. Nos três casos de linha em branco, nenhuma estratégia
+baseada em token acusaria a linha do nome: não há token nela. (Acusar a linha do token
+anterior acertaria o do ponto e vírgula, mas daria 17, 48 e 59 nos de linha em branco.)
+
+**b. Bloco com declarações e sem comandos é recusado.** `{ x : int; } { }` dá
+`ERRO: sintatico proximo a "}"`. A gramática da Seção 2 exige `ListaComando` com pelo menos um
+comando; a Seção 5 diz que o bloco "pode ou não ter uma lista de comandos". O enunciado se
+contradiz, e o projeto segue a gramática formal (D2). Bloco vazio se escreve `{ ; }`.
+
+**c. Comentário que não termina acusa a linha onde abriu**, e não a do fim do arquivo, que é
+o que o exemplo SimpleLang do professor faria (ele usa o contador de linhas no `<<EOF>>`). O
+porquê está na última pergunta da seção 12.
+
+## 12. Perguntas que podem cair
 
 **Por que `yylineno` e não um contador manual?** `%option yylineno` faz o Flex contar
 sozinho. Com contador manual seria preciso incrementar em *toda* regra que consome `\n` —
@@ -160,8 +209,22 @@ global do Flex. Nesta fase o sintático não usa; a partir da Fase 2 (AST) o lex
 com `strdup` para dentro dos nós da árvore — cópia obrigatória, porque o Flex reaproveita
 o buffer de `yytext` no próximo token.
 
-**O que `yylex()` devolve no fim do arquivo?** O padrão do Flex é 0. O enunciado menciona
--1; testado, funciona igual, porque o Bison trata **qualquer valor ≤ 0** como fim de entrada.
+**O que `yylex()` devolve no fim do arquivo?** -1 (`EOF`), pela regra `<<EOF>> return EOF;`,
+como pede a Seção 3.1. Sem a regra o Flex devolveria 0, e funcionaria igual — o Bison trata
+**qualquer valor ≤ 0** como fim de entrada. A regra está lá para cumprir a letra do enunciado.
+
+**O teste diz `Lin20` e o compilador diz 21. Está errado?** Não. Até o `escreva` da linha 21
+chegar, `escreva "Conceito: "` ainda podia estar certo — o `;` podia vir depois. O erro só é
+detectado no token seguinte, e a Seção 3.2 pede a linha da detecção (tabela da seção 11).
+
+**Por que `+5` é aceito e `+a` não?** O `+` entrou como sinal de constante
+(`PrimExpr → '+' INTCONST`), que é o que a Tabela 1 descreve. A gramática da Seção 2 não tem
+`+` unário, então `+a` continua erro.
+
+**Por que o `YY_USER_ACTION` ignora espaços?** Ele roda antes de **toda** regra, inclusive a de
+espaços. Se os `\n` do fim do arquivo contassem, `yylloc` ficaria com a linha depois do último
+token — o mesmo defeito do `yylineno`. A abertura `/*` conta (é lida em `INITIAL`); o miolo do
+comentário, não.
 
 **Por que o comentário não terminado acusa a linha em que ele abriu?** O erro só é
 *detectado* no `<<EOF>>`, mas ali o `yylineno` já passou da última linha: no `erro_lexico2.g`,

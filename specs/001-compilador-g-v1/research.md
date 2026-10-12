@@ -193,10 +193,10 @@ Fase 5, com o material de aula em mãos. Não bloqueia nada agora.
 
 ---
 
-## D12. `INTCONST` sem sinal — desvio deliberado da Tabela 1 (verificado)
+## D12. `INTCONST` sem sinal no léxico — o sinal vem da gramática (verificado)
 
-**Decisão**: no Flex, `INTCONST` é `[0-9]+`. O sinal fica por conta da gramática, que já tem
-`UnExpr → '-' PrimExpr`.
+**Decisão**: no Flex, `INTCONST` é `[0-9]+`. O sinal fica por conta da gramática: o `-` já
+vinha de `UnExpr → '-' PrimExpr`, e o `+` ganhou uma produção a mais, `PrimExpr → '+' INTCONST`.
 
 **Por quê**: a Tabela 1 do enunciado descreve `INTCONST` como "podendo ou ter sinal (+ ou -)
 ou não". Implementado literalmente (`[+-]?[0-9]+`), o casamento mais longo do Flex quebra
@@ -217,22 +217,33 @@ O `-1` viraria um `INTCONST` de dois caracteres, e a gramática receberia
 Com a versão sem sinal, `a = -5;` continua válido — é menos unário aplicado à constante.
 É a solução padrão: o léxico não decide sinal, o sintático decide.
 
+**Revisão final — o `+`**: até a revisão, só o `-` funcionava; `b = +5;` dava
+`ERRO: sintatico proximo a "+"`, contra a Tabela 1. A produção `PrimExpr → '+' INTCONST`
+resolve sem mexer no léxico, e o Bison continua com 0 conflitos. O `+` vale só **antes de
+constante**, que é o que a Tabela 1 descreve: `b = +5;` e `b = a - +2;` passam
+(`testes/Outros/ok_borda.g`), mas `+a` continua erro — a Seção 2 não tem `+` unário.
+
 **Descartado**: usar contexto à direita (*trailing context*) no Flex para aceitar o sinal só
 quando não houver operando à esquerda. Funcionaria, mas é um recurso obscuro e difícil de
 explicar — e o resultado seria o mesmo.
 
 ---
 
-## D13. Fim de arquivo: `0` ou `-1`, tanto faz (verificado)
+## D13. Fim de arquivo: regra `<<EOF>> return EOF;` (revista na revisão final)
 
-**Decisão**: não escrever regra `<<EOF>>` na condição inicial; o padrão do Flex devolve `0`.
+**Decisão**: o `g-v1.l` tem a regra `<<EOF>> return EOF;` — no fim do arquivo, `yylex()`
+devolve -1 (o `EOF` do `stdio.h`).
 
-**Por quê**: a Seção 3.1 do enunciado diz que `yylex()` "deve retornar -1 (EOF) quando o fim
-de arquivo é encontrado". Testados os dois, o resultado é idêntico: o código gerado pelo
-Bison trata **qualquer valor ≤ 0** como fim de entrada. Uma regra a menos.
+**Por quê**: a Seção 3.1 é explícita: `yylex()` "deve retornar -1 (EOF) quando o fim de
+arquivo é encontrado". O `ex2` do professor faz o mesmo (`<<EOF>> return(EOF);`).
 
-Isso não vale para o `<<EOF>>` dentro da *start condition* de comentário, que continua
-sendo necessário — é ele que detecta o comentário não terminado.
+**Antes**: a decisão era **não** escrever a regra, porque o padrão do Flex devolve 0 e o
+Bison trata **qualquer valor ≤ 0** como fim de entrada — testados os dois, o resultado é
+idêntico. Funcionava, mas fugia da letra do enunciado sem ganho nenhum; a revisão pôs a regra.
+
+Sem *start condition*, essa regra vale em todo estado que não tem `<<EOF>>` próprio. O
+comentário tem o seu (`<COMENTARIO><<EOF>>`), que continua detectando o comentário não
+terminado.
 
 ---
 

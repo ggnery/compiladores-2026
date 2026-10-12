@@ -205,11 +205,11 @@ G-V1 descreve.
 
 **Prazo: 15/10/2026 (entrega) · Apresentação: 15, 19 e 22/10/2026**
 
-- [ ] T077 Rodar `make clean && make` numa cópia limpa e confirmar que **só** `make` produz o executável (exigência explícita do enunciado)
-- [ ] T078 Testar em Linux (ou máquina virtual/container) com gcc 14, flex 2.6.4 e bison 3.8.2 — é o ambiente de avaliação
-- [ ] T079 [P] Revisar os comentários de `g-v1.l`, `g-v1.y`, `ast.c`, `tabela.c`, `semantico.c` e `codigo.c`: comentário em português no ponto onde a dúvida aparece, sem enfeite
-- [ ] T080 [P] Conferir a lista de entrega da Seção 8 do enunciado item a item: `g-v1.l`, `g-v1.y`, tabela de símbolos (+`.h`), semântico (+`.h`), gerador (+`.h`), `Makefile`
-- [ ] T081 Compactar a pasta (sem `.o`, sem executável, sem `materials/`) e submeter na Turing
+- [x] T077 Rodar `make clean && make` numa cópia limpa e confirmar que **só** `make` produz o executável (exigência explícita do enunciado)
+- [x] T078 Testar em Linux (ou máquina virtual/container) com gcc 14, flex 2.6.4 e bison 3.8.2 — é o ambiente de avaliação (feito: Debian trixie, gcc 14.2, flex 2.6.4, bison 3.8.2)
+- [x] T079 [P] Revisar os comentários de `g-v1.l`, `g-v1.y`, `ast.c`, `tabela.c`, `semantico.c` e `codigo.c`: comentário em português no ponto onde a dúvida aparece, sem enfeite
+- [x] T080 [P] Conferir a lista de entrega da Seção 8 do enunciado item a item: `g-v1.l`, `g-v1.y`, tabela de símbolos (+`.h`), semântico (+`.h`), gerador (+`.h`), `Makefile` (conferido; o código está em `src/`, o `Makefile` na raiz)
+- [ ] T081 Compactar a pasta (sem `build/`, sem executável, sem `materiais/`) e submeter na Turing — como gerar e conferir o zip: `quickstart.md`, seção 5
 - [ ] T082 Ensaiar a apresentação usando os 5 arquivos `docs/EXPLICACAO-faseN.md` — o enunciado é explícito: **compilador correto + aluno que não sabe explicar = nota zero**
 
 ---

@@ -42,8 +42,8 @@ sintático **um inteiro** (o token) e deixa o lexema em `yytext`.
 | Token | Padrão | Observação |
 |---|---|---|
 | `IDENTIFICADOR` | `[A-Za-z_][A-Za-z0-9_]*` | letra ou `_`, seguido de letras/dígitos/`_` |
-| `INTCONST` | `[0-9]+` | **sem sinal** — ver D12 em `research.md` |
-| `CARCONST` | `'.'` ou `'\.'` | delimitado por apóstrofo; aceita escapes `'\n'`, `'\t'` |
+| `INTCONST` | `[0-9]+` | **sem sinal**: o `-` e o `+` vêm da gramática (`'-' PrimExpr`, `'+' INTCONST`) — ver D12 em `research.md` |
+| `CARCONST` | `'.'` ou `'\.'` | delimitado por apóstrofo; aceita escapes `'\n'`, `'\t'`... (o valor de cada um é decidido em `codigo.c`) |
 | `CADEIACARACTERES` | `"[^"\n]*"` | entre aspas; **não** pode conter quebra de linha |
 
 ## Descartados (não geram token)
@@ -53,9 +53,15 @@ sintático **um inteiro** (o token) e deixa o lexema em `yytext`.
 
 ## Fim de arquivo
 
-`yylex()` devolve `-1`/`EOF` conforme a regra `<<EOF>>`, sinalizando fim da entrada ao Bison.
+Regra `<<EOF>> return EOF;`: `yylex()` devolve `-1` (`EOF`), como pede a Seção 3.1 — ver D13
+em `research.md`. Dentro de comentário vale a regra própria `<COMENTARIO><<EOF>>`, que dá o
+erro `COMENTÁRIO NAO TERMINA`.
 
 ## Contagem de linha
 
 `%option yylineno` — a variável `yylineno` é mantida pelo Flex e lida pelo `.y` via
 `extern int yylineno;`.
+
+`YY_USER_ACTION` copia `yylineno` para `yylloc` (o `@n` do Bison) só em texto lido no estado
+`INITIAL` que não começa com espaço — os tokens e a abertura `/*`. Assim `yylloc` guarda a
+linha do último token, que o `yyerror` usa quando o arquivo acaba no meio do programa.

@@ -98,7 +98,7 @@ A pilha é necessária porque expressões se aninham: em `a * (b + c)`, enquanto
 
 | nó | instrução |
 |---|---|
-| `INT_CONST`, `CAR_CONST` | `li $a0, valor` (o `car` vira o código ASCII: `'a'` → 97) |
+| `INT_CONST`, `CAR_CONST` | `li $a0, valor` (o `car` vira o código ASCII: `'a'` → 97, `'\n'` → 10; escapes na seção 6) |
 | `ID` | `lw $a0, desl($fp)` |
 | `x = e` | gera `e`, depois `sw $a0, desl($fp)` |
 | `+ - * /` | `addu`, `subu`, `mul`, `div` |
@@ -162,6 +162,21 @@ nem é calculado (desvia direto para o fim). O teste `ok_codigo.g` usa
 rótulo. O montador junta as partes de cada seção — não é preciso uma segunda passada só para
 coletar as cadeias.
 
+**Cadeia que termina em barra invertida sai em bytes.** A cadeia vai para o `.asm` como veio do
+fonte. Em `escreva "C:\";` o montador lia `\"` como aspa escapada, a cadeia não fechava e o
+SPIM parava com `syntax error`. Agora `escreveCadeia` põe as barras do fim à parte, como
+`.byte 92` (o código de `\`), e o terminador como `.byte 0` — o que o `.asciiz` poria:
+
+```asm
+S2:	.ascii "C:"
+	.byte 92
+	.byte 0
+```
+
+**Escapes de `car` com valor certo.** `codigoCaractere` traduz `'\n'`, `'\t'`, `'\r'`, `'\0'` e,
+desde a revisão final, `'\a'`, `'\b'`, `'\f'`, `'\v'` (7, 8, 12, 11). Antes, esses quatro caíam no
+`default`, que devolve a letra depois da barra: `'\a'` valia 97, igual a `'a'`.
+
 **O nome do `.asm` sai do nome do `.g`.** `testes/Outros/ok1.g` → `testes/Outros/ok1.asm`. A
 geração só acontece se o semântico passou; com erro, nenhum `.asm` é criado.
 
@@ -185,12 +200,29 @@ printf "z\n" | spim -quiet -file testes/Outros/ok_codigo.asm
 ./g-v1 testes/Corretos/fatorial.g
 printf "5\n" | spim -quiet -file testes/Corretos/fatorial.asm
 #   O fatorial de 5 e: 120
+
+./g-v1 testes/Outros/ok_borda.g
+spim -quiet -file testes/Outros/ok_borda.asm
+#   5 5        <- +5 e a - +2 (sinal + da Tabela 1)
+#   1          <- '\a' vale 7, e não a letra a
+#   C:\        <- cadeia que termina em barra
 ```
 
 Os resultados de todos os programas corretos estão na tabela da Fase 7 de
 `specs/001-compilador-g-v1/quickstart.md`.
 
-## 8. Perguntas que podem cair
+## 8. Limitações conhecidas
+
+Nenhuma aparece num programa de verdade; ficam registradas para não serem surpresa.
+
+| Limite | Quando aparece | Por quê |
+|---|---|---|
+| desvio de ~32 KB | `se`/`enquanto` com corpo de mais de ~1000 comandos simples (`x = x + 1;` gera 8 instruções). Testado: corpo de 1020 passa; com 1030, o `beqz` cai fora do código (`Bad instruction address`) | o SPIM 9.1 só alcança desvios de ~32 KB |
+| segmento de texto de 64 KB | programa com mais de ~2000 desses comandos: `Can't expand text segment` | tamanho padrão do SPIM; `spim -stext 1000000 ...` resolve |
+| pilha de recursão | bloco com ~7500 comandos: `imprimeNo` estoura a pilha ao gravar a árvore (*segmentation fault*) | a lista de comandos é encadeada, e cada comando é um nível a mais de recursão. Com ~10000, o erro vem antes, da pilha do Bison: `ERRO: programa complexo demais para o analisador` |
+| escapes em cadeias | `escreva "a\nb";` escreve duas linhas | o texto vai cru para o `.asciiz`, e quem interpreta os escapes é o montador, não o compilador |
+
+## 9. Perguntas que podem cair
 
 **Por que refazer a pilha de escopos, se o semântico já fez?** O semântico desempilha cada
 escopo ao sair do bloco; quando ele termina, a pilha está vazia. E é preciso saber, em cada

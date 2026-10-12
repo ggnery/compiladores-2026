@@ -1,18 +1,21 @@
-/* tabela.c - pilha de tabelas de símbolos da linguagem G-V1 */
+/* tabela.c - pilha de tabelas de símbolos da linguagem G-V1 (Seção 5 do enunciado).
+   Implementa o tabela.h para o semântico e a geração de código. São duas listas encadeadas:
+   os escopos, ligados por "abaixo", formam a pilha; as variáveis de um escopo, por "prox".
+   Lista e não hash: um bloco tem poucas variáveis; trocar a estrutura só mexeria neste arquivo. */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "tabela.h"
 
-static Escopo* topo;   /* escopo do bloco atual; NULL = pilha vazia */
+static Escopo* topo;   /* escopo do bloco atual; NULL = pilha vazia. static: só as funções deste arquivo mexem nela */
 
-/* a) */
+/* a) Chamada no começo de cada percurso (semântico e geração de código): cada um monta a sua pilha. */
 void iniciaPilha(void) {
     topo = NULL;
 }
 
-/* b) */
+/* b) Ao entrar num bloco com declarações: o escopo novo vira o topo. */
 void empilhaEscopo(void) {
     Escopo* novo = malloc(sizeof(Escopo));
     if (!novo) { printf("ERRO: memoria insuficiente\n"); exit(1); }
@@ -22,7 +25,8 @@ void empilhaEscopo(void) {
     topo = novo;
 }
 
-/* c) */
+/* c) O topo é o bloco mais interno, e a declaração mais próxima do uso é a que vale:
+      é assim que o x de dentro esconde o x de fora sem que isso seja erro. */
 Entrada* busca(char* lexema) {
     Escopo*  s;
     Entrada* e;
@@ -34,7 +38,7 @@ Entrada* busca(char* lexema) {
     return NULL;
 }
 
-/* d) */
+/* d) Ao sair do bloco: as variáveis dele deixam de existir e o escopo de fora volta a ser o topo. */
 void desempilhaEscopo(void) {
     Escopo*  velho = topo;
     Entrada* e, *prox;
@@ -49,10 +53,12 @@ void desempilhaEscopo(void) {
     free(velho);
 }
 
+/* Só o topo é checado: repetir o nome no mesmo bloco é erro; num bloco de dentro é permitido.
+   Devolve a entrada para a geração de código gravar nela o deslocamento. */
 Entrada* insere(char* lexema, Tipo tipo, int linha) {
     Entrada* e;
 
-    if (!topo) { printf("ERRO: insere sem escopo aberto\n"); exit(1); }
+    if (!topo) { printf("ERRO: insere sem escopo aberto\n"); exit(1); }   /* bug do compilador, não do programa G-V1 */
 
     for (e = topo->entradas; e; e = e->prox)     /* só o escopo do topo conta */
         if (strcmp(e->lexema, lexema) == 0)
@@ -65,11 +71,13 @@ Entrada* insere(char* lexema, Tipo tipo, int linha) {
     e->tipo         = tipo;
     e->linha        = linha;
     e->deslocamento = 0;                          /* definido só na geração de código */
-    e->prox         = topo->entradas;             /* entra na cabeça da lista */
+    e->prox         = topo->entradas;             /* entra na cabeça da lista: ligar é um passo só */
     topo->entradas  = e;
     return e;
 }
 
+/* Para a demonstração (make teste-tabela): numera os escopos da base (1) ao topo (n)
+   e os mostra do topo para a base, cada um com a variável mais recente primeiro. */
 void imprimePilha(void) {
     Escopo*  s;
     Entrada* e;

@@ -51,7 +51,19 @@ Duas regras valem para a árvore inteira:
    `filho2`, todo nome já foi declarado quando o uso aparece — é o que a Fase 4 vai usar.
 2. **Ausência é sempre `NULL`**, nunca um nó "vazio": lista vazia, `senao` inexistente e
    comando vazio (`;`). Por isso o `entao`, o `senao` e o corpo do `enquanto` também podem ser
-   `NULL` — e, na árvore gravada, um filho `NULL` simplesmente não aparece.
+   `NULL`. Na árvore gravada, um filho `NULL` não aparece — a não ser que haja outro filho
+   **depois** dele: aí sai `(vazio)` no lugar, senão `se (c) entao ; senao escreva 2; fimse`
+   pareceria `entao escreva 2`:
+
+```
+SE_CMD  (linha 5)
+├── ID c : int  (linha 5)
+├── (vazio)
+└── ESCREVA_CMD  (linha 5)
+    └── INT_CONST 2 : int  (linha 5)
+```
+
+O caso mais comum é o `BLOCO` sem declarações, que mostra `(vazio)` antes da `LISTA_CMD`.
 
 ## 3. Por que a pilha do Bison carrega ponteiros
 
@@ -115,11 +127,15 @@ obrigatória: o Flex **reaproveita** o buffer de `yytext` no token seguinte.
 **pode já ter lido o próximo token** (o *lookahead*), e aí `yylineno` já avançou. A solução:
 
 ```c
-#define YY_USER_ACTION  yylloc.first_line = yylloc.last_line = yylineno;
+#define YY_USER_ACTION  if (YY_START == INITIAL && !strchr(" \t\r\n", yytext[0])) \
+                            yylloc.first_line = yylloc.last_line = yylineno;
 ```
 
-`YY_USER_ACTION` roda em **todo** token, no momento em que ele é lido, e grava a linha em
-`yylloc`. Com `%locations` no `g-v1.y`, cada posição da pilha guarda essa linha — é o `@n`.
+`YY_USER_ACTION` roda antes de **toda** regra, no momento em que o texto é lido, e grava a
+linha do token em `yylloc`. Com `%locations` no `g-v1.y`, cada posição da pilha guarda essa
+linha — é o `@n`. O `if` deixa de fora os espaços e o miolo dos comentários, que também passam
+por ali: assim `yylloc` guarda a linha do **último token**, que o `yyerror` usa quando o
+arquivo acaba no meio do programa (Fase 1, seção 11).
 Com uma expressão quebrada em três linhas:
 
 ```
@@ -170,8 +186,8 @@ O que conferir: declarações à esquerda do `BLOCO`, comandos à direita, e o `
 
 A gravação fica em `ast.c`: `imprimeArvore` abre o arquivo, chama `imprimeNo` na raiz e fecha
 o arquivo. `imprimeNo` é a função recursiva — cada nó grava o prefixo herdado do pai, o seu
-galho e o rótulo, e chama `imprimeNo` para cada filho que não é `NULL`. O último filho usa
-`└──`; os outros, `├──`. O nome do arquivo (`build/arvore.txt`) é definido no `main` do `g-v1.y`.
+galho e o rótulo, e chama `imprimeNo` para cada filho que não é `NULL` (um `NULL` antes do
+último filho vira a linha `(vazio)`). O último filho usa `└──`; os outros, `├──`. O nome do arquivo (`build/arvore.txt`) é definido no `main` do `g-v1.y`.
 
 ## 8. Perguntas que podem cair
 
@@ -179,6 +195,10 @@ galho e o rótulo, e chama `imprimeNo` para cada filho que não é `NULL`. O úl
 visitar `filho1`, `filho2`, `filho3` —, então uma única função recursiva (`imprimeNo`) grava a árvore
 inteira. O preço: o C não sabe o que `filho2` significa. Quem garante é a tabela de filhos do `data-model.md`,
 respeitada nas ações do `g-v1.y`.
+
+**O `(vazio)` é um nó?** Não. Na memória o filho continua `NULL`; `(vazio)` é só o texto que o
+`imprimeNo` grava para a posição dos filhos não mudar na leitura. Só aparece quando há filho
+depois: um `senao` ausente, que é o último, não imprime nada.
 
 **Por que a lista de comandos é encadeada?** A struct tem três filhos fixos e um bloco pode ter
 qualquer número de comandos. Cada `LISTA_CMD` guarda um comando em `filho1` e o resto em
