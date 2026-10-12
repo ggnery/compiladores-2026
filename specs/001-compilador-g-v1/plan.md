@@ -76,18 +76,19 @@ specs/001-compilador-g-v1/
 
 ### Código-fonte (raiz do repositório)
 
-Layout **plano**, exatamente a lista de arquivos que o professor pede na Seção 8 do enunciado.
-Nada de `src/`: o professor roda `make` na raiz da pasta entregue.
+Todo o código escrito a mão fica em `src/`; o `Makefile` e o executável continuam na raiz,
+porque o professor roda `make` e `./g-v1 teste.g` na raiz da pasta entregue.
 
 ```text
 Makefile              # gera léxico, gera sintático, compila, liga  -> ./g-v1
 build/                # TUDO que é gerado (sintatico.c, lexico.c, g-v1.tab.h, *.o)
-g-v1.l                # Flex: tokens, comentários, erros léxicos           [Fase 1]
-g-v1.y                # Bison: gramática + ações que constroem a AST  [Fases 1-2]
-ast.h / ast.c         # struct do nó, criaNo(), percurso de impressão      [Fase 2]
-tabela.h / tabela.c   # pilha de tabelas de símbolos (4 operações)         [Fase 3]
-semantico.h / .c      # percurso na AST: escopo + tipos                    [Fase 4]
-codigo.h / codigo.c   # percurso na AST: assembly MIPS                     [Fase 5]
+src/
+├── g-v1.l              # Flex: tokens, comentários, erros léxicos         [Fase 1]
+├── g-v1.y              # Bison: gramática + ações que constroem a AST [Fases 1-2]
+├── ast.h / ast.c       # struct do nó, criaNo(), percurso de impressão    [Fase 2]
+├── tabela.h / tabela.c # pilha de tabelas de símbolos (4 operações)       [Fase 3]
+├── semantico.h / .c    # percurso na AST: escopo + tipos                  [Fase 4]
+└── codigo.h / codigo.c # percurso na AST: assembly MIPS                   [Fase 5]
 testes/
 ├── ok1.g                  # programa correto
 ├── erro_lexico1.g         # caractere inválido
@@ -98,7 +99,7 @@ testes/
 materials/            # PDFs e exemplos do professor (não entra na entrega)
 ```
 
-**Decisão de estrutura**: arquivos na raiz, um par `.h`/`.c` por fase. Assim cada fase adiciona
+**Decisão de estrutura**: código em `src/`, um par `.h`/`.c` por fase. Assim cada fase adiciona
 **um par de arquivos novo** sem mexer nos anteriores, e a lista de entrega do enunciado é
 conferida item a item. A `main()` fica no epílogo do `g-v1.y` (como no exemplo do professor) e
 cresce uma chamada por fase: `yyparse()` → `imprimeArvore()` → `analisaSemantica()` → `geraCodigo()`.
