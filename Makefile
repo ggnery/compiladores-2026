@@ -32,8 +32,11 @@ TABELA_O = $(BUILD)/tabela.o
 # ---- analisador semantico (escrito a mao) ----
 SEMANTICO_O = $(BUILD)/semantico.o
 
+# ---- gerador de codigo MIPS (escrito a mao) ----
+CODIGO_O = $(BUILD)/codigo.o
+
 # Todos os pedacos que formam o compilador.
-OBJETOS = $(SINTATICO_O) $(LEXICO_O) $(AST_O) $(TABELA_O) $(SEMANTICO_O)
+OBJETOS = $(SINTATICO_O) $(LEXICO_O) $(AST_O) $(TABELA_O) $(SEMANTICO_O) $(CODIGO_O)
 
 # Alvo principal: liga os objetos e produz o executavel.
 # O executavel fica na RAIZ porque o enunciado pede:  ./g-v1 teste.g
@@ -60,6 +63,11 @@ $(SEMANTICO_O): $(SRC)/semantico.c $(SRC)/semantico.h $(SRC)/tabela.h $(SRC)/ast
 	mkdir -p $(BUILD)
 	$(CC) -c $(SRC)/semantico.c -o $(SEMANTICO_O)
 
+# --------------------------- gerador de codigo ---------------------------
+$(CODIGO_O): $(SRC)/codigo.c $(SRC)/codigo.h $(SRC)/tabela.h $(SRC)/ast.h
+	mkdir -p $(BUILD)
+	$(CC) -c $(SRC)/codigo.c -o $(CODIGO_O)
+
 # ------------------------- analisador sintatico -------------------------
 $(SINTATICO_C): $(SRC)/g-v1.y
 	mkdir -p $(BUILD)
@@ -70,7 +78,7 @@ $(SINTATICO_C): $(SRC)/g-v1.y
 $(SINTATICO_H): $(SINTATICO_C)
 	@test -f $@ || $(BISON) --defines=$(SINTATICO_H) -o $(SINTATICO_C) $(SRC)/g-v1.y
 
-$(SINTATICO_O): $(SINTATICO_C) $(SINTATICO_H) $(SRC)/ast.h $(SRC)/semantico.h
+$(SINTATICO_O): $(SINTATICO_C) $(SINTATICO_H) $(SRC)/ast.h $(SRC)/semantico.h $(SRC)/codigo.h
 	$(CC) -I$(BUILD) -I$(SRC) -c $(SINTATICO_C) -o $(SINTATICO_O)
 
 # -------------------------- analisador lexico ---------------------------

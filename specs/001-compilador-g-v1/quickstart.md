@@ -165,10 +165,19 @@ Bison. Se imprimir, a gramática foi transcrita errado (a original tem 0 conflit
 
 ### Fase 7 — geração de código (US5)
 
-| Teste | Esperado |
-|---|---|
-| `testes/Outros/ok1.g` | gera assembly MIPS |
-| rodar no MARS/SPIM | a saída é a que o programa G-V1 descreve |
+`./g-v1 teste.g` grava `teste.asm` ao lado do `.g`. Para rodar: `spim -quiet -file teste.asm`
+(o SPIM lê um número por linha).
+
+| Teste | Entrada | Saída esperada |
+|---|---|---|
+| `testes/Outros/ok_codigo.g` | `z` | `z` / `7 3` / `7` / `-2 1` / `ok` / `senao` / `54321` |
+| `testes/Outros/ok1.g` | — | `soma: 55` / `grande` / `a` |
+| `testes/Outros/ok2.g` | `7`, `3` | `ok-11` |
+| `testes/Corretos/fatorial.g` | `5` | `O fatorial de 5 e: 120` |
+| `testes/Corretos/PA.g` | `2`, `4`, `3` | `O valor do elemento 4 da progressao e: 11` |
+| `testes/Corretos/Soma.g` | `2`, `4`, `3` | `O valor da soma da progressao aritmetica e: 26` |
+| `testes/Corretos/NotaEmConceito.g` | `5` / `6` / `8` / `10` | `Conceito: D` / `C` / `B` / `A` |
+| `testes/Corretos/SeqOrdenada.g` | `3`, `1`, `2`, `3`, `0` | `ORDENADA` |
 
 ## 5. Antes de entregar (15/10/2026)
 

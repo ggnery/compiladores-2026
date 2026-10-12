@@ -1,6 +1,7 @@
 # gerados pelo build (make clean apaga tudo isto)
 build/
 g-v1
+*.asm
 
 # objetos soltos (inclusive os que vieram nos exemplos do professor)
 *.o

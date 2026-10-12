@@ -186,16 +186,16 @@ base e desempilha, imprimindo o resultado.
 **Teste independente**: o `.asm` gerado roda no MARS/SPIM e produz a saída que o programa
 G-V1 descreve.
 
-- [ ] T067 [US5] Estudar o PDF *MIPS Assembly Language Programming* (Bloco 2 da Turing) e anotar em `docs/EXPLICACAO-fase5.md` a convenção escolhida: quais registradores, como a pilha cresce, quais `syscall` usar para ler/escrever
-- [ ] T068 [P] [US5] Criar `codigo.h` com o protótipo `void geraCodigo(No* raiz);`
-- [ ] T069 [US5] Implementar em `codigo.c` o percurso que recria os escopos (empilha/desempilha como na US4), agora preenchendo o campo `deslocamento` de cada entrada e somando o tamanho total a alocar por bloco
-- [ ] T070 [US5] Implementar em `codigo.c` a emissão do esqueleto do programa: seção `.data`, seção `.text`, rótulo `main` e a saída (`syscall` 10)
-- [ ] T071 [US5] Implementar em `codigo.c` a geração de código das expressões (percurso pós-ordem: gera o filho esquerdo, o direito, depois a operação), incluindo constantes, variáveis, aritméticos, relacionais e lógicos
-- [ ] T072 [US5] Implementar em `codigo.c` a geração de `ATRIB`, `LEIA_CMD`, `ESCREVA_CMD`, `ESCREVA_STR` e `NOVALINHA_CMD` usando as `syscall` de E/S
-- [ ] T073 [US5] Implementar em `codigo.c` a geração de `SE_CMD` e `ENQUANTO_CMD` com rótulos únicos (contador global) e desvios condicionais
-- [ ] T074 [US5] Chamar `geraCodigo(raiz)` na `main()` de `g-v1.y` (só se a análise semântica passou) e acrescentar `codigo.o` ao `Makefile`
-- [ ] T075 [US5] Rodar `./g-v1 testes/Outros/ok1.g`, carregar o assembly gerado no MARS/SPIM e conferir que a saída bate com o esperado
-- [ ] T076 [US5] Completar `docs/EXPLICACAO-fase5.md`: como o deslocamento de cada variável é decidido e por que o percurso das expressões é pós-ordem
+- [x] T067 [US5] Estudar o PDF *MIPS Assembly Language Programming* (Bloco 2 da Turing) e anotar em `docs/EXPLICACAO-fase5.md` a convenção escolhida: quais registradores, como a pilha cresce, quais `syscall` usar para ler/escrever
+- [x] T068 [P] [US5] Criar `codigo.h` com o protótipo `void geraCodigo(No* raiz, const char* nomeArquivo);` (recebe o nome do `.asm`, como o `imprimeArvore`)
+- [x] T069 [US5] Implementar em `codigo.c` o percurso que recria os escopos (empilha/desempilha como na US4), agora preenchendo o campo `deslocamento` de cada entrada e somando o tamanho total a alocar por bloco
+- [x] T070 [US5] Implementar em `codigo.c` a emissão do esqueleto do programa: seção `.data`, seção `.text`, rótulo `main` e a saída (`syscall` 10)
+- [x] T071 [US5] Implementar em `codigo.c` a geração de código das expressões (percurso pós-ordem: gera o filho esquerdo, o direito, depois a operação), incluindo constantes, variáveis, aritméticos, relacionais e lógicos
+- [x] T072 [US5] Implementar em `codigo.c` a geração de `ATRIB`, `LEIA_CMD`, `ESCREVA_CMD`, `ESCREVA_STR` e `NOVALINHA_CMD` usando as `syscall` de E/S
+- [x] T073 [US5] Implementar em `codigo.c` a geração de `SE_CMD` e `ENQUANTO_CMD` com rótulos únicos (contador global) e desvios condicionais
+- [x] T074 [US5] Chamar `geraCodigo(raiz, "teste.asm")` na `main()` de `g-v1.y` (só se a análise semântica passou) e acrescentar `codigo.o` ao `Makefile`
+- [x] T075 [US5] Rodar os programas corretos e o `testes/Outros/ok_codigo.g` no SPIM e conferir que a saída bate com a tabela da Fase 7 de `quickstart.md`
+- [x] T076 [US5] Completar `docs/EXPLICACAO-fase5.md`: como o deslocamento de cada variável é decidido e por que o percurso das expressões é pós-ordem
 
 **Checkpoint**: o compilador está completo, do fonte ao assembly.
 

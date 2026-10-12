@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "semantico.h"
+#include "codigo.h"
 
 extern int   yylineno;
 extern char* yytext;
@@ -144,6 +145,8 @@ PrimExpr      : IDENTIFICADOR                                      { $$ = criaNo
 int main(int argc, char** argv) {
     struct stat info;
     const char* arquivoArvore = "build/arvore.txt";   /* onde a árvore é gravada */
+    char        arquivoAsm[1024];                     /* teste.g -> teste.asm */
+    char*       ponto;
 
     if (argc != 2) {
         printf("Uso correto: ./g-v1 nome_do_arquivo\n");
@@ -172,6 +175,13 @@ int main(int argc, char** argv) {
     mkdir("build", 0777);                       /* garante a pasta; se já existe, não faz nada */
     imprimeArvore(raiz, arquivoArvore);         /* grava a árvore, já com os tipos anotados */
     printf("Árvore gravada em %s\n", arquivoArvore);
+
+    snprintf(arquivoAsm, sizeof arquivoAsm - 4, "%s", argv[1]);
+    ponto = strrchr(arquivoAsm, '.');
+    if (ponto && !strchr(ponto, '/')) *ponto = '\0';  /* tira a extensão, se houver */
+    strcat(arquivoAsm, ".asm");
+    geraCodigo(raiz, arquivoAsm);               /* só chega aqui se o semântico passou */
+    printf("Código assembly gravado em %s\n", arquivoAsm);
     return 0;
 }
 
